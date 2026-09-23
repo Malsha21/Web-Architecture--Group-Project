@@ -109,4 +109,28 @@ export async function getDashboardData(userId) {
         console.error("Error fetching dashboard data: ", error);
         return null;
     }
+}// Firestore Error Handler utility function
+export function handleFirestoreError(error, customMessage = "An unexpected error occurred.") {
+    console.error("Firestore Error Details: ", error);
+    
+    let userMessage = customMessage;
+
+    // Firebase error codes anuva wenas baras durlaba error messages dena kramaya
+    switch (error.code) {
+        case 'permission-denied':
+            userMessage = "Access denied! You do not have permission to perform this action.";
+            break;
+        case 'not-found':
+            userMessage = "Requested data or document was not found.";
+            break;
+        case 'unavailable':
+            userMessage = "Network error! Please check your internet connection.";
+            break;
+        default:
+            userMessage = error.message || customMessage;
+    }
+
+    // UI eke alert ekakin hamoatama penweema
+    alert(userMessage);
+    return userMessage;
 }
