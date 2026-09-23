@@ -31,4 +31,20 @@ export async function updateUserData(userId, newData) {
     console.error('Error updating user data:', error.message);
     return false;
   }
+}import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "./firebase-config.js";
+
+// Delete user data function eka
+async function deleteUserData(userId) {
+    try {
+        const userRef = doc(db, "users", userId);
+        await deleteDoc(userRef);
+        console.log("User data deleted successfully!");
+        alert("User account deleted successfully!");
+        return true;
+    } catch (error) {
+        console.error("Error deleting user data: ", error);
+        alert("Failed to delete user account.");
+        return false;
+    }
 }
