@@ -18,4 +18,17 @@ export async function readUserData(userId) {
     console.error('Error reading user data:', error.message);
     return null;
   }
+}import { updateDoc } from 'firebase/firestore';
+
+// Update user data - student ge data wenas karana kotasa
+export async function updateUserData(userId, newData) {
+  try {
+    const docRef = doc(db, 'users', userId);
+    await updateDoc(docRef, newData);
+    console.log('User data updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error updating user data:', error.message);
+    return false;
+  }
 }
