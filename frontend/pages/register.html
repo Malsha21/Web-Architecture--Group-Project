@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+</head>
+<body>
+
+  <h2>Create an account</h2>
+  <form id="registerForm" autocomplete="on">
+    <label for="registerName">Full name</label>
+    <input type="text" id="registerName" name="name" autocomplete="name" placeholder="Full name" required>
+
+    <label for="registerEmail">Email</label>
+    <input type="email" id="registerEmail" name="email" autocomplete="email" inputmode="email" placeholder="Email" required>
+
+    <label for="registerPassword">Password</label>
+    <input type="password" id="registerPassword" name="password" autocomplete="new-password" placeholder="Password" required>
+
+    <label for="registerGrade">Grade</label>
+    <select id="registerGrade" name="grade" required>
+      <option value="" selected disabled>Select your grade</option>
+      <option value="Grade 1">Grade 1</option>
+      <option value="Grade 2">Grade 2</option>
+      <option value="Grade 3">Grade 3</option>
+      <option value="Grade 4">Grade 4</option>
+      <option value="Grade 5">Grade 5</option>
+    </select>
+
+    <label for="role">Role</label>
+    <select id="role" name="role">
+      <option value="student">Student</option>
+      <option value="parent">Parent</option>
+      <option value="teacher">Teacher</option>
+      <option value="admin">Admin</option>
+    </select>
+
+    <button type="submit">Register</button>
+  </form>
+
+  <script type="module" src="../js/register.js"></script>
+</body>
+</html>

@@ -1,4 +1,9 @@
-import React, { useState, useCallback } from 'react';
+
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, db } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   LayoutDashboard, Users, BookOpen, GraduationCap, Settings, Search, Plus,
   Filter, FileText, ChevronRight, MoreVertical, Upload, Lock, Mail, EyeOff,
@@ -419,6 +424,7 @@ const GAMES_DATA = [
 // STUDENT AUTH
 // ─────────────────────────────────────────────────────────────────────────────
 function StudentLogin({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
+  const login = useFirebaseLogin(nav, 'student_dashboard');
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-sky-50 to-blue-100">
       {/* Left panel */}
@@ -440,10 +446,11 @@ function StudentLogin({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
           <h2 className="text-3xl font-extrabold text-slate-900 mb-1">{t('login')}</h2>
           <p className="text-slate-500 text-sm mb-8">Welcome back, student! 👋</p>
 
-          <div className="space-y-4 mb-6">
-            <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} />
-            <FormField label="Password" type="password" placeholder="••••••••" icon={<Lock />} />
-          </div>
+          <form onSubmit={login.handleSubmit}>
+            <div className="space-y-4 mb-6">
+              <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} value={login.email} onChange={login.handleEmailChange} />
+              <FormField label="Password" type="password" placeholder="••••••••" icon={<Lock />} value={login.password} onChange={login.handlePasswordChange} />
+            </div>
           <div className="flex items-center justify-between mb-6">
             <label className="flex items-center gap-2 text-sm font-medium text-slate-600 cursor-pointer">
               <input type="checkbox" className="rounded" /> Remember me
@@ -451,9 +458,11 @@ function StudentLogin({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
             <button onClick={() => nav('student_forgot')} className="text-sm font-semibold text-blue-600 hover:underline">Forgot password?</button>
           </div>
 
-          <button onClick={() => nav('student_dashboard')} className="w-full btn-chunky bg-yellow-400 shadow-[0_5px_0_#D97706] hover:bg-yellow-500 text-yellow-900 font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all mb-4">
+          {login.error && <p role="alert" className="mb-4 text-sm font-semibold text-red-600">{login.error}</p>}
+          <button type="submit" disabled={login.isLoading} className="w-full btn-chunky bg-yellow-400 shadow-[0_5px_0_#D97706] hover:bg-yellow-500 disabled:opacity-60 text-yellow-900 font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all mb-4">
             🚀 {t('startLearning')}
           </button>
+          </form>
 
           <p className="text-center text-sm text-slate-500">Don't have an account? <button onClick={() => nav('student_register')} className="font-bold text-blue-600 hover:underline">{t('register')}</button></p>
 
@@ -469,6 +478,36 @@ function StudentLogin({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
 
 function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
   const [step, setStep] = useState(1);
+  const [grade, setGrade] = useState('');
+  const [language, setLanguage] = useState('en');
+  const [profileError, setProfileError] = useState('');
+  const register = useFirebaseRegister(() => setStep(2));
+
+  const finishRegistration = async () => {
+    if (!grade) {
+      setProfileError('Please select your grade.');
+      return;
+    }
+    if (!auth.currentUser) {
+      setProfileError('Your account session expired. Please register again.');
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, 'users', auth.currentUser.uid), {
+        email: auth.currentUser.email,
+        displayName: register.name,
+        role: 'student',
+        grade,
+        language,
+        createdAt: new Date().toISOString(),
+      });
+      nav('student_dashboard');
+    } catch (error) {
+      console.error('Firestore profile error:', error);
+      setProfileError('Your account was created, but the profile could not be saved. Please try again.');
+    }
+  };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 p-6">
       <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-xl max-w-md w-full border border-slate-100">
@@ -489,22 +528,23 @@ function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) 
         <p className="text-slate-500 text-sm mb-6">{step === 1 ? 'Fill in your details to get started' : 'Choose your grade and language'}</p>
 
         {step === 1 ? (
-          <div className="space-y-4">
-            <FormField label="Full Name" type="text" placeholder="e.g. Chamara Perera" icon={<User />} />
-            <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} />
-            <FormField label="Password" type="password" placeholder="Create a strong password" icon={<Lock />} />
-            <button onClick={() => setStep(2)} className="w-full btn-chunky bg-blue-600 shadow-[0_5px_0_#1D4ED8] hover:bg-blue-700 text-white font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all">
+          <form onSubmit={register.handleSubmit} className="space-y-4">
+            <FormField label="Full Name" type="text" placeholder="e.g. Chamara Perera" icon={<User />} value={register.name} onChange={register.handleNameChange} required />
+            <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} value={register.email} onChange={register.handleEmailChange} />
+            <FormField label="Password" type="password" placeholder="Create a strong password" icon={<Lock />} value={register.password} onChange={register.handlePasswordChange} />
+            {register.error && <p role="alert" className="text-sm font-semibold text-red-600">{register.error}</p>}
+            <button type="submit" disabled={register.isLoading} className="w-full btn-chunky bg-blue-600 shadow-[0_5px_0_#1D4ED8] hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all">
               Next Step →
             </button>
-          </div>
+          </form>
         ) : (
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Grade</label>
               <div className="grid grid-cols-5 gap-2">
-                {['1', '2', '3', '4', '5'].map(g => (
-                  <button key={g} className="py-3 rounded-xl border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 font-extrabold text-slate-700 transition-all">
-                    {g}
+                {['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5'].map(option => (
+                  <button type="button" key={option} onClick={() => { setGrade(option); setProfileError(''); }} className={`py-3 rounded-xl border-2 font-extrabold transition-all ${grade === option ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50'}`}>
+                    {option.replace('Grade ', '')}
                   </button>
                 ))}
               </div>
@@ -513,11 +553,12 @@ function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) 
               <label className="block text-sm font-bold text-slate-700 mb-2">Preferred Language</label>
               <div className="flex gap-2">
                 {[{ code: 'en', label: 'English' }, { code: 'si', label: 'සිංහල' }, { code: 'ta', label: 'தமிழ்' }].map(l => (
-                  <button key={l.code} className="flex-1 py-3 rounded-xl border-2 border-slate-200 hover:border-blue-400 font-bold text-sm transition-all">{l.label}</button>
+                  <button type="button" key={l.code} onClick={() => setLanguage(l.code)} className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${language === l.code ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-blue-400'}`}>{l.label}</button>
                 ))}
               </div>
             </div>
-            <button onClick={() => nav('student_dashboard')} className="w-full btn-chunky bg-yellow-400 shadow-[0_5px_0_#D97706] hover:bg-yellow-500 text-yellow-900 font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all">
+            {profileError && <p role="alert" className="text-sm font-semibold text-red-600">{profileError}</p>}
+            <button onClick={finishRegistration} className="w-full btn-chunky bg-yellow-400 shadow-[0_5px_0_#D97706] hover:bg-yellow-500 text-yellow-900 font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all">
               🚀 Start Learning Free!
             </button>
           </div>
@@ -674,13 +715,15 @@ function StudentShell({ screen, nav, lang, setLang, t }: { screen: Screen; nav: 
 // STUDENT SCREENS
 // ─────────────────────────────────────────────────────────────────────────────
 function StudentDashboard({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
+  const { userName } = useCurrentUserProfile();
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Greeting hero */}
       <div className="bg-gradient-to-r from-yellow-400 to-amber-400 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-4 mb-8 shadow-[0_6px_0_#D97706]">
         <ElephantMascot size={80} className="shrink-0" />
         <div className="text-center md:text-left">
-          <h2 className="text-2xl font-extrabold text-amber-900">{t('welcomeBack')}, Chamara! 👋</h2>
+          <h2 className="text-2xl font-extrabold text-amber-900">{t('welcomeBack')}, {userName}! 👋</h2>
           <p className="text-amber-800 font-semibold mt-1">You have <strong>3 lessons</strong> to continue. Let's go!</p>
           <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
             <Chip icon={<Trophy />} label="Level 4 Learner" color="bg-white/60 text-amber-900" />
@@ -1305,6 +1348,8 @@ function ProgressPage({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
 }
 
 function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
+  const { userName, grade } = useCurrentUserProfile();
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-extrabold text-slate-900 mb-8">{t('profile')}</h1>
@@ -1313,8 +1358,8 @@ function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) =
       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-6 mb-8 flex items-center gap-6 text-white">
         <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-4xl shrink-0 shadow-lg">🧒</div>
         <div>
-          <h2 className="text-2xl font-extrabold">Chamara Perera</h2>
-          <p className="text-blue-200">Grade 3 · Student</p>
+          <h2 className="text-2xl font-extrabold">{userName}</h2>
+          <p className="text-blue-200">{grade || 'Student'}</p>
           <div className="flex gap-2 mt-2">
             <Chip icon={<Zap />} label="Level 4" color="bg-white/20 text-white" />
             <Chip icon={<Star />} label="11 Stars" color="bg-white/20 text-white" />
@@ -1358,6 +1403,7 @@ function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) =
 // PARENT / TEACHER PORTAL
 // ─────────────────────────────────────────────────────────────────────────────
 function ParentLogin({ nav }: { nav: (s: Screen) => void }) {
+  const login = useFirebaseLogin(nav, 'parent_dashboard');
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-green-700 to-teal-800 p-12 flex-col text-white relative overflow-hidden">
@@ -1386,13 +1432,16 @@ function ParentLogin({ nav }: { nav: (s: Screen) => void }) {
           </button>
           <h2 className="text-3xl font-bold text-slate-900 mb-1">Parent / Teacher Login</h2>
           <p className="text-slate-500 text-sm mb-8">Access your student monitoring dashboard.</p>
+          <form onSubmit={login.handleSubmit}>
           <div className="space-y-5 mb-6">
-            <FormField label="Email" type="email" placeholder="teacher@school.lk" icon={<Mail />} />
-            <FormField label="Password" type="password" placeholder="••••••••" icon={<Lock />} />
+            <FormField label="Email" type="email" placeholder="teacher@school.lk" icon={<Mail />} value={login.email} onChange={login.handleEmailChange} />
+            <FormField label="Password" type="password" placeholder="••••••••" icon={<Lock />} value={login.password} onChange={login.handlePasswordChange} />
           </div>
-          <button onClick={() => nav('parent_dashboard')} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm">
+          {login.error && <p role="alert" className="mb-4 text-sm font-semibold text-red-600">{login.error}</p>}
+          <button type="submit" disabled={login.isLoading} className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm">
             Sign In to Dashboard
           </button>
+          </form>
           <p className="text-center text-xs text-slate-400 mt-4">Don't have an account? <span className="text-green-600 font-semibold cursor-pointer hover:underline">Register here</span></p>
         </div>
       </div>
@@ -1647,6 +1696,7 @@ function ParentStudentDetail({ nav }: { nav: (s: Screen) => void }) {
 // ADMIN PORTAL
 // ─────────────────────────────────────────────────────────────────────────────
 function AdminLogin({ nav }: { nav: (s: Screen) => void }) {
+  const login = useFirebaseLogin(nav, 'admin_dashboard', 'admin@edulanka.lk', 'password123');
   return (
     <div className="flex h-screen bg-slate-50 w-full overflow-hidden">
       <div className="hidden md:flex md:w-1/2 bg-[#1B3673] p-12 flex-col relative text-white">
@@ -1673,18 +1723,14 @@ function AdminLogin({ nav }: { nav: (s: Screen) => void }) {
           <button onClick={() => nav('landing')} className="flex items-center gap-1 text-slate-400 hover:text-slate-700 text-sm font-semibold mb-6"><ChevronLeft className="w-4 h-4" /> Back to Home</button>
           <h2 className="text-3xl font-bold text-slate-900 mb-1">Admin Console Login</h2>
           <p className="text-slate-500 text-sm mb-8">Sign in with your administrator credentials.</p>
+          <form onSubmit={login.handleSubmit}>
           <div className="space-y-5 mb-8">
-            <FormField label="ADMINISTRATOR EMAIL" type="email" defaultValue="admin@edulanka.lk" icon={<Mail />} />
-            <div>
-              <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-700 tracking-wider">SYSTEM PASSWORD</label><a href="#" className="text-xs font-semibold text-blue-600 hover:underline">Forgot?</a></div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input type="password" defaultValue="password123" className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none font-mono tracking-widest text-lg" />
-                <EyeOff className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 cursor-pointer" />
-              </div>
-            </div>
+            <FormField label="ADMINISTRATOR EMAIL" type="email" icon={<Mail />} value={login.email} onChange={login.handleEmailChange} />
+            <FormField label="SYSTEM PASSWORD" type="password" icon={<Lock />} value={login.password} onChange={login.handlePasswordChange} />
           </div>
-          <button onClick={() => nav('admin_dashboard')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm mb-4">Authenticate & Sign In</button>
+          {login.error && <p role="alert" className="mb-4 text-sm font-semibold text-red-600">{login.error}</p>}
+          <button type="submit" disabled={login.isLoading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm mb-4">Authenticate & Sign In</button>
+          </form>
           <p className="text-xs text-center text-slate-400">Authorized personnel only.</p>
         </div>
       </div>
@@ -2102,6 +2148,128 @@ function AdminAddQuestion({ nav }: { nav: (s: Screen) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
+function getEmailName(email: string | null | undefined) {
+  const localPart = email?.split('@')[0]?.trim();
+  if (!localPart) return 'there';
+
+  return localPart
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ') || 'there';
+}
+
+function useCurrentUserProfile() {
+  const [userName, setUserName] = useState('there');
+  const [grade, setGrade] = useState('');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      if (!user) {
+        setUserName('there');
+        setGrade('');
+        return;
+      }
+
+      let profileName = '';
+      let profileGrade = '';
+      try {
+        const profileSnapshot = await getDoc(doc(db, 'users', user.uid));
+        const profile = profileSnapshot.data();
+        profileName = String(profile?.displayName || '').trim();
+        profileGrade = String(profile?.grade || '').trim();
+      } catch (error) {
+        console.error('Unable to load user profile:', error);
+      }
+
+      setUserName(user.displayName?.trim() || profileName || getEmailName(user.email));
+      setGrade(profileGrade);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  return { userName, grade };
+}
+
+function useFirebaseLogin(nav: (screen: Screen) => void, destination: Screen, initialEmail = '', initialPassword = '') {
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState(initialPassword);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => setEmail(event.target.value);
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => setPassword(event.target.value);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    if (!email.trim() || !password) {
+      setError('Enter both your email and password.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      nav(destination);
+    } catch (loginError) {
+      const code = loginError instanceof Error && 'code' in loginError ? String(loginError.code) : '';
+      setError(code.includes('invalid-credential') || code.includes('user-not-found') || code.includes('wrong-password')
+        ? 'Invalid email or password.'
+        : 'Unable to sign in. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { email, password, error, isLoading, handleEmailChange, handlePasswordChange, handleSubmit };
+}
+
+function useFirebaseRegister(onSuccess: () => void) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => setEmail(event.target.value);
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => setPassword(event.target.value);
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => setName(event.target.value);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    const trimmedName = name.trim().replace(/\s+/g, ' ');
+    if (!trimmedName) {
+      setError('Enter your full name.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email.trim())) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9\s]/.test(password)) {
+      setError('Password must be 8+ characters with a letter, number, and symbol.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      await updateProfile(userCredential.user, { displayName: trimmedName });
+      onSuccess();
+    } catch (registrationError) {
+      const code = registrationError instanceof Error && 'code' in registrationError ? String(registrationError.code) : '';
+      setError(code.includes('email-already-in-use') ? 'An account with this email already exists.' : 'Unable to create your account. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { name, email, password, error, isLoading, handleNameChange, handleEmailChange, handlePasswordChange, handleSubmit };
+}
+
 function ElephantMascot({ size = 80, className = '' }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -2125,7 +2293,7 @@ function ElephantMascot({ size = 80, className = '' }: { size?: number; classNam
   );
 }
 
-function FormField({ label, type, placeholder, icon, defaultValue }: { label: string; type: string; placeholder?: string; icon?: React.ReactNode; defaultValue?: string }) {
+function FormField({ label, type, placeholder, icon, defaultValue, value, onChange, required }: { label: string; type: string; placeholder?: string; icon?: React.ReactNode; defaultValue?: string; value?: string; onChange?: React.ChangeEventHandler<HTMLInputElement>; required?: boolean }) {
   const [showPw, setShowPw] = useState(false);
   const isPw = type === 'password';
   return (
@@ -2137,6 +2305,9 @@ function FormField({ label, type, placeholder, icon, defaultValue }: { label: st
           type={isPw && showPw ? 'text' : type}
           placeholder={placeholder}
           defaultValue={defaultValue}
+          value={value}
+          onChange={onChange}
+          required={required}
           className={`w-full ${icon ? 'pl-11' : 'pl-4'} ${isPw ? 'pr-11' : 'pr-4'} py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-900 ${isPw ? 'font-mono tracking-widest text-lg' : ''}`}
         />
         {isPw && <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2"><EyeOff className="w-5 h-5 text-slate-400" /></button>}
