@@ -1,0 +1,10 @@
+{
+  "description": "Engaging mobile-first platform offering free interactive learning resources for Sri Lankan primary school children, enhancing literacy and numeracy skills.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

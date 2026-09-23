@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+Sinhala:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --font-sans: 'Nunito', 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif;
+  
+  --color-background: #FDFDF8; /* very light yellow/off-white */
+  --color-foreground: #1E3A8A; /* deep ocean blue */
+  
+  --color-primary: #FBBF24; /* mango yellow */
+  --color-primary-foreground: #78350F; /* dark brown */
+  
+  --color-secondary: #4ADE80; /* vibrant green */
+  --color-secondary-foreground: #064E3B; /* dark green */
+  
+  --color-accent: #EA580C; /* warm terracotta */
+  --color-accent-foreground: #FFF7ED; /* light orange */
+  
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1E3A8A;
+  
+  --color-muted: #E2E8F0;
+  --color-muted-foreground: #64748B;
+  
+  --color-border: #E2E8F0;
+  --color-ring: #FBBF24;
+  
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-2xl: 3rem;
+  
+  --shadow-chunky: 0 8px 0px 0px rgba(0,0,0,0.1);
+  --shadow-chunky-active: 0 2px 0px 0px rgba(0,0,0,0.1);
+  --shadow-chunky-primary: 0 8px 0px 0px #D97706; /* amber-600 */
+  --shadow-chunky-primary-active: 0 2px 0px 0px #D97706;
+  --shadow-chunky-secondary: 0 8px 0px 0px #16A34A; /* green-600 */
+  --shadow-chunky-secondary-active: 0 2px 0px 0px #16A34A;
+  --shadow-chunky-accent: 0 8px 0px 0px #C2410C; /* orange-700 */
+  --shadow-chunky-accent-active: 0 2px 0px 0px #C2410C;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* Custom chunky button base styles if needed, but Tailwind classes are preferred */
+.btn-chunky {
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-chunky:active {
+  transform: translateY(6px);
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
