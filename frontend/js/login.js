@@ -1,6 +1,7 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase-config.js";
 
+
 const loginForm = document.getElementById("loginForm");
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const roleRoutes = {
