@@ -67,4 +67,25 @@ export async function getUserProfile(userId) {
         console.error("Error getting user profile: ", error);
         return null;
     }
+}import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase-config.js";
+
+// යූසර්ගේ Role එක ලබා ගැනීමේ ෆන්ෂන් එක
+export async function getUserRole(userId) {
+    try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            console.log("User role:", userData.role);
+            return userData.role; // මෙතනින් යූසර්ගේ role එක (admin/student වage) return වෙනවා
+        } else {
+            console.log("No such user found for role check!");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error getting user role: ", error);
+        return null;
+    }
 }
