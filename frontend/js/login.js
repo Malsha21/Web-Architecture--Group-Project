@@ -11,7 +11,8 @@ const roleRoutes = {
 };
 
 function getRoleRoute(role) {
-    return roleRoutes[String(role).toLowerCase()] || roleRoutes.student;
+    const normalizedRole = String(role || "student").trim().toLowerCase();
+    return roleRoutes[normalizedRole] || roleRoutes.student;
 }
 
 if (loginForm) {
@@ -21,6 +22,13 @@ if (loginForm) {
         const emailInput = document.getElementById("loginEmail");
         const passwordInput = document.getElementById("loginPassword");
         const submitButton = loginForm.querySelector("button[type='submit']");
+
+        if (!(emailInput instanceof HTMLInputElement) || !(passwordInput instanceof HTMLInputElement)) {
+            console.error("Login form is missing #loginEmail or #loginPassword.");
+            alert("Login form is not configured correctly. Please try again later.");
+            return;
+        }
+
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
@@ -43,7 +51,7 @@ if (loginForm) {
             const token = await userCredential.user.getIdTokenResult();
             const role = token.claims.role || "student";
 
-            localStorage.setItem("userRole", String(role).toLowerCase());
+            localStorage.setItem("userRole", String(role).trim().toLowerCase());
             alert("Login Successful!");
             window.location.href = getRoleRoute(role);
         } catch (error) {
@@ -55,7 +63,8 @@ if (loginForm) {
                 "auth/user-disabled": "This account has been disabled."
             };
 
-            alert("Login Failed: " + (messages[error.code] || "Unable to sign in. Please try again."));
+            const errorCode = error && typeof error === "object" && "code" in error ? error.code : "";
+            alert("Login Failed: " + (messages[errorCode] || "Unable to sign in. Please try again."));
             console.error("Firebase login error:", error);
         } finally {
             if (submitButton) submitButton.disabled = false;

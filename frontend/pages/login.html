@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Log in</title>
+</head>
+<body>
+	<main>
+		<h1>Log in</h1>
+		<form id="loginForm" autocomplete="on">
+			<label for="loginEmail">Email</label>
+			<input
+				type="email"
+				id="loginEmail"
+				name="email"
+				autocomplete="email"
+				inputmode="email"
+				required
+			>
+
+			<label for="loginPassword">Password</label>
+			<input
+				type="password"
+				id="loginPassword"
+				name="password"
+				autocomplete="current-password"
+				required
+			>
+
+			<button type="submit">Log in</button>
+		</form>
+	</main>
+
+	<script type="module" src="../js/login.js"></script>
+</body>
+</html>
