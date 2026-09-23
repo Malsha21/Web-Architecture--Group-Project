@@ -47,4 +47,24 @@ async function deleteUserData(userId) {
         alert("Failed to delete user account.");
         return false;
     }
+}import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase-config.js";
+
+// යූසර්ගේ ප්‍රොෆයිල් ඩේටා ලබා ගැනීමේ ෆන්ෂන් එක
+export async function getUserProfile(userId) {
+    try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            console.log("User profile data:", userSnap.data());
+            return userSnap.data();
+        } else {
+            console.log("No such user found!");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error getting user profile: ", error);
+        return null;
+    }
 }
