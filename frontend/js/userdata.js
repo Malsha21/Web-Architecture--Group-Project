@@ -88,4 +88,25 @@ export async function getUserRole(userId) {
         console.error("Error getting user role: ", error);
         return null;
     }
+}import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase-config.js";
+
+// ඩෑෂ්බෝඩ් ඩේටා ලබා ගැනීමේ ෆන්ෂන් එක
+export async function getDashboardData(userId) {
+    try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const dashboardData = userSnap.data();
+            console.log("Dashboard data fetched successfully:", dashboardData);
+            return dashboardData;
+        } else {
+            console.log("No dashboard data found for this user!");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching dashboard data: ", error);
+        return null;
+    }
 }
