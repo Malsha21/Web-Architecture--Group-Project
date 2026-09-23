@@ -10,6 +10,7 @@
     "format": "oxfmt"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "lucide-react": "^1.47.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
