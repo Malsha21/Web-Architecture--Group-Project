@@ -1442,7 +1442,7 @@ function ParentLogin({ nav }: { nav: (s: Screen) => void }) {
             Sign In to Dashboard
           </button>
           </form>
-          <p className="text-center text-xs text-slate-400 mt-4">Don't have an account? <span className="text-green-600 font-semibold cursor-pointer hover:underline">Register here</span></p>
+          <p className="text-center text-xs text-slate-400 mt-4">Don't have an account? <button type="button" onClick={() => nav('student_register')} className="text-green-600 font-semibold hover:underline">Register here</button></p>
         </div>
       </div>
     </div>
