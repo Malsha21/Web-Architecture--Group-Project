@@ -478,8 +478,8 @@ function StudentLogin({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
 
 function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
   const [step, setStep] = useState(1);
-  const [grade, setGrade] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [grade, setGrade] = useState('Grade 5');
+  const [language, setLanguage] = useState('si');
   const [profileError, setProfileError] = useState('');
   const register = useFirebaseRegister(() => setStep(2));
 
@@ -541,9 +541,9 @@ function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) 
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Grade</label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-3">
                 {['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5'].map(option => (
-                  <button type="button" key={option} onClick={() => { setGrade(option); setProfileError(''); }} className={`py-3 rounded-xl border-2 font-extrabold transition-all ${grade === option ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50'}`}>
+                  <button type="button" key={option} aria-pressed={grade === option} onClick={() => { setGrade(option); setProfileError(''); }} className={`aspect-square w-full rounded-full border-2 font-extrabold transition-all ${grade === option ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50'}`}>
                     {option.replace('Grade ', '')}
                   </button>
                 ))}
