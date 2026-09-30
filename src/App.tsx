@@ -1348,7 +1348,7 @@ function ProgressPage({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
 }
 
 function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
-  const { userName, grade } = useCurrentUserProfile();
+  const { userName, email, grade } = useCurrentUserProfile();
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -1374,8 +1374,8 @@ function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) =
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-6">
         <h3 className="font-extrabold text-slate-800 px-6 py-4 border-b border-slate-100">Account Settings</h3>
         {[
-          { label: 'Full Name', value: 'Chamara Perera', icon: <User /> },
-          { label: 'Email', value: 'chamara@school.lk', icon: <Mail /> },
+          { label: 'Full Name', value: userName, icon: <User /> },
+          { label: 'Email', value: email, icon: <Mail /> },
           { label: 'Grade', value: 'Grade 3', icon: <GraduationCap /> },
           { label: 'Language', value: 'English', icon: <Globe /> },
         ].map((f, i) => (
@@ -2163,12 +2163,14 @@ function getEmailName(email: string | null | undefined) {
 
 function useCurrentUserProfile() {
   const [userName, setUserName] = useState('there');
+  const [email, setEmail] = useState('');
   const [grade, setGrade] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async user => {
       if (!user) {
         setUserName('there');
+        setEmail('');
         setGrade('');
         return;
       }
@@ -2185,13 +2187,14 @@ function useCurrentUserProfile() {
       }
 
       setUserName(user.displayName?.trim() || profileName || getEmailName(user.email));
+      setEmail(user.email || '');
       setGrade(profileGrade);
     });
 
     return unsubscribe;
   }, []);
 
-  return { userName, grade };
+  return { userName, email, grade };
 }
 
 function useFirebaseLogin(nav: (screen: Screen) => void, destination: Screen, initialEmail = '', initialPassword = '') {
