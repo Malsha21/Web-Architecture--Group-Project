@@ -1,5 +1,6 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase-config.js";
+import { getUserRole } from "./userdata.js";
 
 const loginForm = document.getElementById("loginForm");
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -48,11 +49,11 @@ if (loginForm) {
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const token = await userCredential.user.getIdTokenResult();
-            const role = token.claims.role || "student";
 
-            localStorage.setItem("userRole", String(role).trim().toLowerCase());
-            alert("Login Successful!");
+            // FIX: read the role from Firestore instead of token claims
+            const role = (await getUserRole(userCredential.user.uid)) || "student";
+
+            localStorage.setItem("userRole", String(role).trim().toLowerCase()); // convenience only
             window.location.href = getRoleRoute(role);
         } catch (error) {
             const messages = {
