@@ -11,7 +11,7 @@ import {
   CheckCircle, XCircle, HelpCircle, ShoppingBag, Target, TrendingUp,
   ArrowRight, Menu, X, Play, Award, Globe, BookMarked, Gamepad2, ClipboardList,
   User, BarChart, ChevronDown, RefreshCw, Clock, Flame, Heart, Volume2,
-  Lightbulb, ImagePlus, AlignLeft, Hash, ToggleLeft,
+  Lightbulb, ImagePlus, AlignLeft, Hash, ToggleLeft, Camera,
 } from 'lucide-react';
 
 // ─── i18n ─────────────────────────────────────────────────────────────────────
@@ -1349,6 +1349,11 @@ function ProgressPage({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => 
 
 function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
   const { userName, email, grade } = useCurrentUserProfile();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  useEffect(() => () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+  }, [avatarPreview]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -1356,7 +1361,23 @@ function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) =
 
       {/* Profile card */}
       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-6 mb-8 flex items-center gap-6 text-white">
-        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-4xl shrink-0 shadow-lg">🧒</div>
+        <div className="relative shrink-0">
+          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-4xl shrink-0 shadow-lg overflow-hidden">
+            {avatarPreview ? <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" /> : '🧒'}
+          </div>
+          <label className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white text-blue-600 shadow-md flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors" aria-label="Upload profile picture">
+            <Camera className="w-4 h-4" />
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={event => {
+                const file = event.target.files?.[0];
+                if (file) setAvatarPreview(URL.createObjectURL(file));
+              }}
+            />
+          </label>
+        </div>
         <div>
           <h2 className="text-2xl font-extrabold">{userName}</h2>
           <p className="text-blue-200">{grade || 'Student'}</p>
