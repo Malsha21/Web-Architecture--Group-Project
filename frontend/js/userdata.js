@@ -1,136 +1,43 @@
-import { db } from './firebase-config.js';
-import { doc, getDoc } from 'firebase/firestore';
-
-// Read user data - login unu student kenage data database eken genawa
-export async function readUserData(userId) {
-  try {
-    const docRef = doc(db, 'users', userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      console.log('User data:', docSnap.data());
-      return docSnap.data();
-    } else {
-      console.log('No user found with this ID');
-      return null;
-    }
-  } catch (error) {
-    console.error('Error reading user data:', error.message);
-    return null;
-  }
-}import { updateDoc } from 'firebase/firestore';
-
-// Update user data - student ge data wenas karana kotasa
-export async function updateUserData(userId, newData) {
-  try {
-    const docRef = doc(db, 'users', userId);
-    await updateDoc(docRef, newData);
-    console.log('User data updated successfully');
-    return true;
-  } catch (error) {
-    console.error('Error updating user data:', error.message);
-    return false;
-  }
-}import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase-config.js";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
-// Delete user data function eka
-async function deleteUserData(userId) {
-    try {
-        const userRef = doc(db, "users", userId);
-        await deleteDoc(userRef);
-        console.log("User data deleted successfully!");
-        alert("User account deleted successfully!");
-        return true;
-    } catch (error) {
-        console.error("Error deleting user data: ", error);
-        alert("Failed to delete user account.");
-        return false;
-    }
-}import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase-config.js";
-
-// යූසර්ගේ ප්‍රොෆයිල් ඩේටා ලබා ගැනීමේ ෆන්ෂන් එක
+// Get the full profile of a user (name, email, role, grade)
 export async function getUserProfile(userId) {
     try {
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-            console.log("User profile data:", userSnap.data());
-            return userSnap.data();
-        } else {
-            console.log("No such user found!");
-            return null;
-        }
+        const userSnap = await getDoc(doc(db, "users", userId));
+        return userSnap.exists() ? userSnap.data() : null;
     } catch (error) {
-        console.error("Error getting user profile: ", error);
+        console.error("Error getting user profile:", error);
         return null;
     }
-}import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase-config.js";
+}
 
-// යූසර්ගේ Role එක ලබා ගැනීමේ ෆන්ෂන් එක
+// Get only the role (student / parent / teacher / admin)
 export async function getUserRole(userId) {
+    const profile = await getUserProfile(userId);
+    return profile ? profile.role : null;
+}
+
+// Update profile fields. Protected fields are removed so "role" can't be changed.
+export async function updateUserData(userId, newData) {
     try {
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-            const userData = userSnap.data();
-            console.log("User role:", userData.role);
-            return userData.role; // මෙතනින් යූසර්ගේ role එක (admin/student වage) return වෙනවා
-        } else {
-            console.log("No such user found for role check!");
-            return null;
-        }
+        const { role, uid, email, createdAt, ...safeData } = newData;
+        await updateDoc(doc(db, "users", userId), safeData);
+        return true;
     } catch (error) {
-        console.error("Error getting user role: ", error);
-        return null;
+        console.error("Error updating user data:", error);
+        return false;
     }
-}import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase-config.js";
+}
 
-// ඩෑෂ්බෝඩ් ඩේටා ලබා ගැනීමේ ෆන්ෂන් එක
-export async function getDashboardData(userId) {
+// Admin only (Firestore rules enforce this).
+// NOTE: this deletes only the Firestore profile, not the Firebase Auth account.
+export async function deleteUserData(userId) {
     try {
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-            const dashboardData = userSnap.data();
-            console.log("Dashboard data fetched successfully:", dashboardData);
-            return dashboardData;
-        } else {
-            console.log("No dashboard data found for this user!");
-            return null;
-        }
+        await deleteDoc(doc(db, "users", userId));
+        return true;
     } catch (error) {
-        console.error("Error fetching dashboard data: ", error);
-        return null;
+        console.error("Error deleting user data:", error);
+        return false;
     }
-}// Firestore Error Handler utility function
-export function handleFirestoreError(error, customMessage = "An unexpected error occurred.") {
-    console.error("Firestore Error Details: ", error);
-    
-    let userMessage = customMessage;
-
-    // Firebase error codes anuva wenas baras durlaba error messages dena kramaya
-    switch (error.code) {
-        case 'permission-denied':
-            userMessage = "Access denied! You do not have permission to perform this action.";
-            break;
-        case 'not-found':
-            userMessage = "Requested data or document was not found.";
-            break;
-        case 'unavailable':
-            userMessage = "Network error! Please check your internet connection.";
-            break;
-        default:
-            userMessage = error.message || customMessage;
-    }
-
-    // UI eke alert ekakin hamoatama penweema
-    alert(userMessage);
-    return userMessage;
 }
