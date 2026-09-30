@@ -149,6 +149,8 @@ export default function App() {
 // ─────────────────────────────────────────────────────────────────────────────
 function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const login = useFirebaseLogin(nav);
+  const scrollToLogin = () => document.getElementById('unified-login')?.scrollIntoView({ behavior: 'smooth' });
 
   return (
     <div className="min-h-screen bg-[#FDFDF8]">
@@ -187,7 +189,7 @@ function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
             </div>
 
-            <button onClick={() => nav('student_login')} className="hidden md:block px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            <button onClick={scrollToLogin} className="hidden md:block px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
               {t('login')}
             </button>
             <button onClick={() => nav('student_register')} className="hidden md:block px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition-colors shadow-sm">
@@ -208,7 +210,7 @@ function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang
               </button>
             ))}
             <div className="pt-2 border-t border-slate-100 flex gap-2">
-              <button onClick={() => nav('student_login')} className="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-center">{t('login')}</button>
+              <button onClick={() => { setMenuOpen(false); scrollToLogin(); }} className="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-center">{t('login')}</button>
               <button onClick={() => nav('student_register')} className="flex-1 py-2 rounded-xl bg-blue-600 text-sm font-semibold text-white text-center">{t('register')}</button>
             </div>
           </div>
@@ -345,22 +347,22 @@ function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang
         </div>
       </section>
 
-      {/* ── Portal CTA ── */}
-      <section className="py-16">
-        <div className="max-w-5xl mx-auto px-4 md:px-8">
-          <h2 className="text-3xl font-extrabold text-slate-900 text-center mb-10">Choose your portal</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { emoji: '🎒', title: 'I\'m a Student', desc: 'Start your learning journey today. It\'s free!', bg: 'bg-yellow-400', shadow: 'shadow-[0_6px_0_#D97706]', action: () => nav('student_register') },
-              { emoji: '👩‍🏫', title: 'I\'m a Teacher', desc: 'Monitor your students\' progress and performance.', bg: 'bg-green-500', shadow: 'shadow-[0_6px_0_#16A34A]', action: () => nav('parent_login') },
-              { emoji: '🛡️', title: 'I\'m an Admin', desc: 'Manage users, content, and system settings.', bg: 'bg-blue-600', shadow: 'shadow-[0_6px_0_#1D4ED8]', action: () => nav('admin_login') },
-            ].map((p, i) => (
-              <button key={i} onClick={p.action} className={`${p.bg} ${p.shadow} btn-chunky rounded-2xl p-7 flex flex-col items-center gap-3 text-center w-full hover:brightness-105 transition-all active:translate-y-1.5 active:shadow-none`}>
-                <span className="text-5xl">{p.emoji}</span>
-                <h3 className="text-xl font-extrabold text-white">{p.title}</h3>
-                <p className="text-white/80 text-sm">{p.desc}</p>
+      {/* ── Unified Login ── */}
+      <section id="unified-login" className="py-16">
+        <div className="max-w-md mx-auto px-4 md:px-8">
+          <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-xl border border-slate-100">
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-1">{t('login')}</h2>
+            <p className="text-slate-500 text-sm mb-8">Sign in to continue to your dashboard.</p>
+            <form onSubmit={login.handleSubmit}>
+              <div className="space-y-4 mb-6">
+                <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} value={login.email} onChange={login.handleEmailChange} />
+                <FormField label="Password" type="password" placeholder="••••••••" icon={<Lock />} value={login.password} onChange={login.handlePasswordChange} />
+              </div>
+              {login.error && <p role="alert" className="mb-4 text-sm font-semibold text-red-600">{login.error}</p>}
+              <button type="submit" disabled={login.isLoading} className="w-full btn-chunky bg-blue-600 shadow-[0_5px_0_#1D4ED8] hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all">
+                {login.isLoading ? 'Signing in...' : t('login')}
               </button>
-            ))}
+            </form>
           </div>
         </div>
       </section>
@@ -424,7 +426,7 @@ const GAMES_DATA = [
 // STUDENT AUTH
 // ─────────────────────────────────────────────────────────────────────────────
 function StudentLogin({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
-  const login = useFirebaseLogin(nav, 'student_dashboard');
+  const login = useFirebaseLogin(nav);
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-sky-50 to-blue-100">
       {/* Left panel */}
@@ -1424,7 +1426,7 @@ function StudentProfile({ nav, t }: { nav: (s: Screen) => void; t: (k: string) =
 // PARENT / TEACHER PORTAL
 // ─────────────────────────────────────────────────────────────────────────────
 function ParentLogin({ nav }: { nav: (s: Screen) => void }) {
-  const login = useFirebaseLogin(nav, 'parent_dashboard');
+  const login = useFirebaseLogin(nav);
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-green-700 to-teal-800 p-12 flex-col text-white relative overflow-hidden">
@@ -1717,7 +1719,7 @@ function ParentStudentDetail({ nav }: { nav: (s: Screen) => void }) {
 // ADMIN PORTAL
 // ─────────────────────────────────────────────────────────────────────────────
 function AdminLogin({ nav }: { nav: (s: Screen) => void }) {
-  const login = useFirebaseLogin(nav, 'admin_dashboard', 'admin@edulanka.lk', 'password123');
+  const login = useFirebaseLogin(nav);
   return (
     <div className="flex h-screen bg-slate-50 w-full overflow-hidden">
       <div className="hidden md:flex md:w-1/2 bg-[#1B3673] p-12 flex-col relative text-white">
@@ -2218,9 +2220,9 @@ function useCurrentUserProfile() {
   return { userName, email, grade };
 }
 
-function useFirebaseLogin(nav: (screen: Screen) => void, destination: Screen, initialEmail = '', initialPassword = '') {
-  const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState(initialPassword);
+function useFirebaseLogin(nav: (screen: Screen) => void) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => setEmail(event.target.value);
@@ -2236,7 +2238,26 @@ function useFirebaseLogin(nav: (screen: Screen) => void, destination: Screen, in
 
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      let profileSnapshot;
+      try {
+        profileSnapshot = await getDoc(doc(db, 'users', credential.user.uid));
+      } catch {
+        setError('Unable to load your account role. Please try again.');
+        return;
+      }
+
+      if (!profileSnapshot.exists()) {
+        setError('Your account profile was not found. Please contact an administrator.');
+        return;
+      }
+
+      const destination = getDashboardForRole(profileSnapshot.data().role);
+      if (!destination) {
+        setError('Your account role is not recognized. Please contact an administrator.');
+        return;
+      }
+
       nav(destination);
     } catch (loginError) {
       const code = loginError instanceof Error && 'code' in loginError ? String(loginError.code) : '';
@@ -2249,6 +2270,21 @@ function useFirebaseLogin(nav: (screen: Screen) => void, destination: Screen, in
   };
 
   return { email, password, error, isLoading, handleEmailChange, handlePasswordChange, handleSubmit };
+}
+
+function getDashboardForRole(role: unknown): Screen | undefined {
+  switch (String(role ?? '').trim().toLowerCase()) {
+    case 'student':
+      return 'student_dashboard';
+    case 'teacher':
+    case 'parent':
+      return 'parent_dashboard';
+    case 'admin':
+    case 'administrator':
+      return 'admin_dashboard';
+    default:
+      return undefined;
+  }
 }
 
 function useFirebaseRegister(onSuccess: () => void) {
