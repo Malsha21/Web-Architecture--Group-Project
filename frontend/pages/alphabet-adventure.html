@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alphabet Adventure | EduLanka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfbf6;
+    --card: #ffffff;
+    --ink: #14213d;
+    --muted: #5b6478;
+    --blue: #1a5cff;
+    --blue-dark: #1246c9;
+    --yellow: #f7b500;
+    --yellow-dark: #d98f00;
+    --green: #1f9d55;
+    --green-soft: #dcf7e6;
+    --red: #d64545;
+    --red-soft: #fde4e4;
+    --cyan: #d1f7fb;
+    --line: #e7e5dc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; background: #fff; border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 900; font-size: 22px; color: #1d3a8a; text-decoration: none; }
+  .back {
+    font-weight: 800; color: var(--ink); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; background: #fff;
+  }
+  .back:hover { border-color: var(--blue); color: var(--blue); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; }
+  .panel {
+    background: var(--card); border-radius: 32px; padding: 28px;
+    box-shadow: 0 10px 30px rgba(20, 33, 61, .08);
+  }
+  .hidden { display: none !important; }
+
+  /* Start screen */
+  .start { text-align: center; }
+  .start .icon {
+    width: 110px; height: 110px; margin: 0 auto 18px; border-radius: 28px;
+    background: var(--cyan); display: grid; place-items: center;
+    font-size: 48px; font-weight: 900; color: var(--blue);
+  }
+  .start h1 { font-size: 40px; margin: 0 0 8px; font-weight: 900; }
+  .start p { color: var(--muted); font-size: 18px; margin: 0 0 26px; line-height: 1.5; }
+
+  .btn-main {
+    font: inherit; font-weight: 900; font-size: 20px; cursor: pointer; border: 0;
+    color: #fff; background: var(--blue); padding: 16px 40px; border-radius: 999px;
+    box-shadow: 0 5px 0 var(--blue-dark);
+  }
+  .btn-main:hover { background: #2a68ff; }
+  .btn-main:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--blue-dark); }
+  .btn-yellow { background: var(--yellow); color: #3a2a00; box-shadow: 0 5px 0 var(--yellow-dark); }
+  .btn-yellow:hover { background: #ffc61f; }
+  .btn-yellow:active { box-shadow: 0 2px 0 var(--yellow-dark); }
+  .btn-line {
+    font: inherit; font-weight: 800; font-size: 18px; cursor: pointer; text-decoration: none; display: inline-block;
+    padding: 14px 30px; border-radius: 999px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+  }
+  .btn-line:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* Game screen */
+  .hud { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; font-weight: 800; }
+  .chip { background: #fff7db; color: #7a5600; border-radius: 999px; padding: 6px 14px; }
+  .bar { height: 14px; background: #eef0f6; border-radius: 999px; overflow: hidden; margin-bottom: 26px; }
+  .bar > span { display: block; height: 100%; width: 0; background: var(--blue); border-radius: 999px; transition: width .35s ease; }
+
+  .letter-tile {
+    width: 190px; height: 170px; margin: 0 auto 12px; border-radius: 36px;
+    background: var(--cyan); display: grid; place-items: center;
+    font-size: 96px; font-weight: 900; color: var(--blue); line-height: 1; letter-spacing: 2px;
+  }
+  .listen-row { text-align: center; margin-bottom: 8px; }
+  .listen {
+    font: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
+    border: 2px solid var(--line); background: #fff; color: var(--ink);
+    border-radius: 999px; padding: 6px 16px;
+  }
+  .listen:hover { border-color: var(--blue); color: var(--blue); }
+  .prompt { text-align: center; font-weight: 800; font-size: 20px; margin: 6px 0 22px; }
+
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .answer {
+    font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 16px 10px; border-radius: 22px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+    transition: transform .1s ease, border-color .1s ease;
+  }
+  .answer .pic { font-size: 56px; line-height: 1.1; }
+  .answer .word { font-weight: 800; font-size: 20px; }
+  .answer:hover:not(:disabled) { border-color: var(--blue); transform: translateY(-2px); }
+  .answer:disabled { cursor: default; }
+  .answer.right { background: var(--green-soft); border-color: var(--green); color: #0f6b38; }
+  .answer.wrong { background: var(--red-soft); border-color: var(--red); color: #9b2323; }
+
+  .feedback { min-height: 32px; text-align: center; font-weight: 800; font-size: 20px; margin-top: 20px; }
+  .feedback.good { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+
+  /* Result screen */
+  .result { text-align: center; }
+  .stars { font-size: 56px; letter-spacing: 6px; margin-bottom: 6px; }
+  .result h2 { font-size: 34px; margin: 0 0 8px; font-weight: 900; }
+  .result .score { font-size: 20px; color: var(--muted); margin: 0 0 18px; }
+  .reward { display: inline-block; background: #fff7db; color: #7a5600; font-weight: 900; font-size: 22px; padding: 10px 22px; border-radius: 999px; margin-bottom: 8px; }
+  .save-note { font-size: 14px; color: var(--muted); margin: 6px 0 26px; min-height: 20px; }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 480px) {
+    .panel { padding: 20px; border-radius: 26px; }
+    .letter-tile { width: 160px; height: 140px; font-size: 76px; }
+    .answer .pic { font-size: 46px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">EduLanka</a>
+  <!-- CHANGE this link to your real Games page address -->
+  <a class="back" href="games.html">Back to games</a>
+</header>
+
+<main>
+
+  <!-- 1. Start screen -->
+  <section class="panel start" id="startScreen">
+    <div class="icon" aria-hidden="true">Aa</div>
+    <h1>Alphabet Adventure</h1>
+    <p>You will see a letter. Find the picture whose word starts with it. Every right answer earns you 10 coins.</p>
+    <button class="btn-main btn-yellow" id="startBtn">Start playing</button>
+  </section>
+
+  <!-- 2. Game screen -->
+  <section class="panel hidden" id="gameScreen" aria-live="polite">
+    <div class="hud">
+      <span class="chip" id="qCount">Question 1 of 10</span>
+      <span class="chip" id="scoreChip">Coins: 0</span>
+    </div>
+    <div class="bar" aria-hidden="true"><span id="barFill"></span></div>
+    <div class="letter-tile" id="letterTile" aria-label="Letter"></div>
+    <div class="listen-row"><button class="listen hidden" id="listenBtn" type="button">🔊 Hear the letter</button></div>
+    <p class="prompt">Which picture starts with this letter?</p>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+  <!-- 3. Result screen -->
+  <section class="panel result hidden" id="resultScreen">
+    <div class="stars" id="resultStars" aria-hidden="true"></div>
+    <h2 id="resultTitle">Well done!</h2>
+    <p class="score" id="resultScore"></p>
+    <div class="reward" id="resultReward"></div>
+    <p class="save-note" id="saveNote"></p>
+    <div class="result-actions">
+      <button class="btn-main" id="againBtn">Play again</button>
+      <a class="btn-line" href="games.html">Back to games</a>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var TOTAL_QUESTIONS = 10;
+  var COINS_PER_CORRECT = 10;
+
+  // One clear picture for every letter (no X, because there is no clear picture for it)
+  var ITEMS = [
+    { l: "A", w: "apple",      e: "🍎" },
+    { l: "B", w: "ball",       e: "⚽" },
+    { l: "C", w: "cat",        e: "🐱" },
+    { l: "D", w: "dog",        e: "🐶" },
+    { l: "E", w: "elephant",   e: "🐘" },
+    { l: "F", w: "fish",       e: "🐟" },
+    { l: "G", w: "grapes",     e: "🍇" },
+    { l: "H", w: "house",      e: "🏠" },
+    { l: "I", w: "ice cream",  e: "🍦" },
+    { l: "J", w: "juice",      e: "🧃" },
+    { l: "K", w: "kite",       e: "🪁" },
+    { l: "L", w: "lion",       e: "🦁" },
+    { l: "M", w: "moon",       e: "🌙" },
+    { l: "N", w: "nose",       e: "👃" },
+    { l: "O", w: "orange",     e: "🍊" },
+    { l: "P", w: "pencil",     e: "✏️" },
+    { l: "Q", w: "queen",      e: "👑" },
+    { l: "R", w: "rabbit",     e: "🐇" },
+    { l: "S", w: "sun",        e: "☀️" },
+    { l: "T", w: "tree",       e: "🌳" },
+    { l: "U", w: "umbrella",   e: "☂️" },
+    { l: "V", w: "violin",     e: "🎻" },
+    { l: "W", w: "watch",      e: "⌚" },
+    { l: "Y", w: "yacht",      e: "⛵" },
+    { l: "Z", w: "zebra",      e: "🦓" }
+  ];
+
+  var current = 0;
+  var correct = 0;
+  var locked = false;
+  var roundItems = [];
+  var currentItem = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var startScreen = $("startScreen"), gameScreen = $("gameScreen"), resultScreen = $("resultScreen");
+
+  function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function shuffle(list) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = rand(0, i);
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // ---------- Hear the letter (works if the browser supports speech) ----------
+  var canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  if (canSpeak) $("listenBtn").classList.remove("hidden");
+  $("listenBtn").addEventListener("click", function () {
+    if (!canSpeak || !currentItem) return;
+    window.speechSynthesis.cancel();
+    var speech = new SpeechSynthesisUtterance(currentItem.l);
+    speech.lang = "en-US";
+    speech.rate = 0.8;
+    window.speechSynthesis.speak(speech);
+  });
+
+  // ---------- Show a question ----------
+  function showQuestion() {
+    locked = false;
+    currentItem = roundItems[current];
+    $("qCount").textContent = "Question " + (current + 1) + " of " + TOTAL_QUESTIONS;
+    $("scoreChip").textContent = "Coins: " + (correct * COINS_PER_CORRECT);
+    $("barFill").style.width = (current / TOTAL_QUESTIONS * 100) + "%";
+    $("letterTile").textContent = currentItem.l + currentItem.l.toLowerCase();
+    $("letterTile").setAttribute("aria-label", "Letter " + currentItem.l);
+    $("feedback").textContent = "";
+    $("feedback").className = "feedback";
+
+    // 1 right picture + 3 pictures from other letters
+    var others = shuffle(ITEMS.filter(function (i) { return i.l !== currentItem.l; })).slice(0, 3);
+    var options = shuffle(others.concat([currentItem]));
+
+    var box = $("answers");
+    box.innerHTML = "";
+    options.forEach(function (item) {
+      var btn = document.createElement("button");
+      btn.className = "answer";
+      btn.type = "button";
+      btn.setAttribute("data-letter", item.l);
+      btn.innerHTML = '<span class="pic" aria-hidden="true"></span><span class="word"></span>';
+      btn.querySelector(".pic").textContent = item.e;
+      btn.querySelector(".word").textContent = item.w;
+      btn.addEventListener("click", function () { choose(btn, item); });
+      box.appendChild(btn);
+    });
+  }
+
+  function choose(btn, item) {
+    if (locked) return;
+    locked = true;
+    var all = document.querySelectorAll(".answer");
+    all.forEach(function (b) { b.disabled = true; });
+
+    var feedback = $("feedback");
+    if (item.l === currentItem.l) {
+      correct++;
+      btn.classList.add("right");
+      feedback.textContent = "Correct! " + currentItem.l + " is for " + currentItem.w + ". +" + COINS_PER_CORRECT + " coins";
+      feedback.className = "feedback good";
+    } else {
+      btn.classList.add("wrong");
+      all.forEach(function (b) {
+        if (b.getAttribute("data-letter") === currentItem.l) b.classList.add("right");
+      });
+      feedback.textContent = "Not quite. " + currentItem.l + " is for " + currentItem.w + ".";
+      feedback.className = "feedback bad";
+    }
+    $("scoreChip").textContent = "Coins: " + (correct * COINS_PER_CORRECT);
+
+    setTimeout(function () {
+      current++;
+      if (current >= TOTAL_QUESTIONS) finish(); else showQuestion();
+    }, 1500);
+  }
+
+  // ---------- Finish ----------
+  function starsFor(score) {
+    if (score >= 9) return 3;
+    if (score >= 6) return 2;
+    if (score >= 3) return 1;
+    return 0;
+  }
+
+  function finish() {
+    $("barFill").style.width = "100%";
+    gameScreen.classList.add("hidden");
+    resultScreen.classList.remove("hidden");
+
+    var stars = starsFor(correct);
+    var coins = correct * COINS_PER_CORRECT;
+    $("resultStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+    $("resultStars").style.color = "#f7b500";
+    $("resultTitle").textContent = stars === 3 ? "Amazing work!" : stars === 2 ? "Great job!" : stars === 1 ? "Good try!" : "Keep practising!";
+    $("resultScore").textContent = "You got " + correct + " out of " + TOTAL_QUESTIONS + " right.";
+    $("resultReward").textContent = "+" + coins + " coins";
+    $("saveNote").textContent = "";
+
+    saveRewards(coins, stars).then(function (message) {
+      $("saveNote").textContent = message;
+    });
+  }
+
+  // =====================================================================
+  //  SAVING COINS AND STARS
+  //  Saves to the logged-in user's account using addRewards() from
+  //  userdata.js. If the user is not logged in, or Firebase can't load,
+  //  it saves in this browser instead.
+  // =====================================================================
+  async function saveRewards(coins, stars) {
+    try {
+      var config = await import("../js/firebase-config.js");
+      var userdata = await import("../js/userdata.js");
+      var user = config.auth.currentUser;
+
+      if (user) {
+        var ok = await userdata.addRewards(user.uid, coins, stars);
+        if (ok) {
+          var profile = await userdata.getUserProfile(user.uid);
+          var total = profile && typeof profile.coins === "number" ? profile.coins : null;
+          return total !== null
+            ? "Saved to your account. Total coins: " + total
+            : "Saved to your account.";
+        }
+        return "Could not save to your account. Please try again later.";
+      }
+      return saveOnThisDevice(coins, stars, "Log in to save coins to your account. ");
+    } catch (e) {
+      console.error("Firebase not available, saving on this device:", e);
+      return saveOnThisDevice(coins, stars, "");
+    }
+  }
+
+  function saveOnThisDevice(coins, stars, prefix) {
+    try {
+      var saved = JSON.parse(localStorage.getItem("edulankaRewards") || '{"coins":0,"stars":0}');
+      saved.coins += coins;
+      saved.stars += stars;
+      localStorage.setItem("edulankaRewards", JSON.stringify(saved));
+      return prefix + "Saved on this device. Total coins: " + saved.coins;
+    } catch (e) {
+      return "Your coins could not be saved.";
+    }
+  }
+
+  // ---------- Buttons ----------
+  function startGame() {
+    current = 0; correct = 0;
+    roundItems = shuffle(ITEMS).slice(0, TOTAL_QUESTIONS);
+    startScreen.classList.add("hidden");
+    resultScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    showQuestion();
+  }
+  $("startBtn").addEventListener("click", startGame);
+  $("againBtn").addEventListener("click", startGame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games | EduLanka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfbf6;
+    --card: #ffffff;
+    --ink: #14213d;
+    --muted: #5b6478;
+    --blue: #1a5cff;
+    --blue-dark: #1246c9;
+    --line: #e7e5dc;
+    --peach: #ffedd5;
+    --lilac: #f3e8ff;
+    --cyan: #d1f7fb;
+    --mint: #dcfce7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  .hidden { display: none !important; }
+
+  /* Top navigation */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding: 12px 24px; background: #fff; border-bottom: 1px solid #fbeec4;
+  }
+  .brand { font-weight: 900; font-size: 22px; color: #1d3a8a; text-decoration: none; }
+  .nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  .nav a {
+    font-weight: 700; font-size: 16px; color: var(--muted); text-decoration: none;
+    padding: 8px 16px; border-radius: 999px;
+  }
+  .nav a:hover { color: var(--ink); background: #f4f4ee; }
+  .nav a[aria-current="page"] { background: #fff1d6; color: var(--ink); font-weight: 800; }
+  .right { display: flex; align-items: center; gap: 8px; }
+  .pill {
+    font-weight: 800; font-size: 15px; border-radius: 999px; padding: 7px 14px;
+    background: #fff7db; color: #7a5600; border: 1px solid #fbe6a0;
+  }
+  .logout {
+    font: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    border-radius: 999px; padding: 7px 16px;
+  }
+  .logout:hover { border-color: var(--blue); color: var(--blue); }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 36px 20px 70px; }
+  .intro { margin-bottom: 26px; }
+  .intro h1 { font-size: 36px; font-weight: 900; margin: 0 0 6px; }
+  .intro p { margin: 0; color: var(--muted); font-size: 18px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+
+  .game {
+    background: var(--card); border-radius: 36px; overflow: hidden;
+    box-shadow: 0 8px 26px rgba(20, 33, 61, .07);
+    display: flex; flex-direction: column;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .game:hover { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(20, 33, 61, .12); }
+  .art { height: 160px; display: grid; place-items: center; font-size: 80px; line-height: 1; }
+  .art.peach { background: var(--peach); }
+  .art.lilac { background: var(--lilac); }
+  .art.cyan  { background: var(--cyan); }
+  .art.mint  { background: var(--mint); }
+  .abc {
+    width: 90px; height: 90px; border-radius: 22px; background: #2f6bff; color: #fff;
+    display: grid; place-items: center; font-weight: 900; font-size: 40px; letter-spacing: 1px;
+  }
+  .body { padding: 22px 24px 26px; display: flex; flex-direction: column; flex: 1; }
+  .title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .title-row h2 { margin: 0; font-size: 24px; font-weight: 900; }
+  .badge { font-weight: 800; font-size: 14px; border-radius: 999px; padding: 4px 14px; }
+  .badge.easy { background: #d9f7e4; color: #14804a; }
+  .badge.medium { background: #fdf1c4; color: #8a6400; }
+  .badge.hard { background: #fde1e1; color: #b02a2a; }
+  .desc { margin: 0 0 20px; color: var(--muted); font-size: 18px; flex: 1; }
+
+  .play {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-weight: 900; font-size: 18px; color: #fff; background: var(--blue);
+    text-decoration: none; padding: 16px 20px; border-radius: 999px;
+  }
+  .play:hover { background: #2a68ff; }
+  .play svg { width: 18px; height: 18px; fill: #fff; }
+
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .game:hover { transform: none; } }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; gap: 20px; }
+    .topbar { padding: 12px 16px; }
+    .intro h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">EduLanka</a>
+
+  <!-- CHANGE these links to your real page addresses -->
+  <nav class="nav" aria-label="Main">
+    <a href="../index.html">Home</a>
+    <a href="subjects.html">Subjects</a>
+    <a href="games.html" aria-current="page">Games</a>
+    <a href="quizzes.html">Quizzes</a>
+    <a href="progress.html">Progress</a>
+    <a href="profile.html">Profile</a>
+  </nav>
+
+  <div class="right">
+    <span class="pill hidden" id="coinsPill">🪙 <span id="coinsNum">0</span></span>
+    <span class="pill hidden" id="starsPill">⭐ <span id="starsNum">0</span></span>
+    <button class="logout hidden" id="logoutBtn" type="button">Log out</button>
+  </div>
+</header>
+
+<main>
+  <div class="intro">
+    <h1>Games</h1>
+    <p>Pick a game, play, and earn coins and stars.</p>
+  </div>
+
+  <div class="grid">
+
+    <article class="game">
+      <div class="art peach" aria-hidden="true">🧮</div>
+      <div class="body">
+        <div class="title-row">
+          <h2>Number Quest</h2>
+          <span class="badge easy">Easy</span>
+        </div>
+        <p class="desc">Solve fun maths puzzles!</p>
+        <a class="play" href="number-quest.html" aria-label="Play Number Quest">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l13-7.5a1 1 0 0 0 0-1.72l-13-7.5A1 1 0 0 0 7 4.5z"/></svg>
+          Play Now
+        </a>
+      </div>
+    </article>
+
+    <article class="game">
+      <div class="art lilac" aria-hidden="true">📝</div>
+      <div class="body">
+        <div class="title-row">
+          <h2>Sinhala Letter Match</h2>
+          <span class="badge medium">Medium</span>
+        </div>
+        <p class="desc">Match Sinhala letters to pictures!</p>
+        <a class="play" href="sinhala-letter-match.html" aria-label="Play Sinhala Letter Match">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l13-7.5a1 1 0 0 0 0-1.72l-13-7.5A1 1 0 0 0 7 4.5z"/></svg>
+          Play Now
+        </a>
+      </div>
+    </article>
+
+    <article class="game">
+      <div class="art cyan" aria-hidden="true"><div class="abc">abc</div></div>
+      <div class="body">
+        <div class="title-row">
+          <h2>Alphabet Adventure</h2>
+          <span class="badge easy">Easy</span>
+        </div>
+        <p class="desc">Journey through the English alphabet!</p>
+        <a class="play" href="alphabet-adventure.html" aria-label="Play Alphabet Adventure">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l13-7.5a1 1 0 0 0 0-1.72l-13-7.5A1 1 0 0 0 7 4.5z"/></svg>
+          Play Now
+        </a>
+      </div>
+    </article>
+
+    <article class="game">
+      <div class="art mint" aria-hidden="true">🌏</div>
+      <div class="body">
+        <div class="title-row">
+          <h2>Island Explorer</h2>
+          <span class="badge hard">Hard</span>
+        </div>
+        <p class="desc">Discover facts about Sri Lanka!</p>
+        <a class="play" href="island-explorer.html" aria-label="Play Island Explorer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l13-7.5a1 1 0 0 0 0-1.72l-13-7.5A1 1 0 0 0 7 4.5z"/></svg>
+          Play Now
+        </a>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+<script>
+(async function () {
+  "use strict";
+  // Shows the user's coins and stars and a Log out button.
+  // The game cards work even if this part can't load.
+  try {
+    var guard = await import("../js/auth-guard.js");
+
+    guard.requireAuth(function (user, profile) {
+      var coins = profile && typeof profile.coins === "number" ? profile.coins : 0;
+      var stars = profile && typeof profile.stars === "number" ? profile.stars : 0;
+      document.getElementById("coinsNum").textContent = coins.toLocaleString();
+      document.getElementById("starsNum").textContent = stars.toLocaleString();
+      document.getElementById("coinsPill").classList.remove("hidden");
+      document.getElementById("starsPill").classList.remove("hidden");
+
+      var btn = document.getElementById("logoutBtn");
+      btn.classList.remove("hidden");
+      btn.addEventListener("click", function () { guard.logout(); });
+    });
+  } catch (e) {
+    console.error("Could not load the login check:", e);
+  }
+})();
+</script>
+</body>
+</html>

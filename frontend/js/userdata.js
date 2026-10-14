@@ -1,5 +1,5 @@
 import { db } from "./firebase-config.js";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc,increment } from "firebase/firestore";
 
 // Get the full profile of a user (name, email, role, grade)
 export async function getUserProfile(userId) {
@@ -38,6 +38,20 @@ export async function deleteUserData(userId) {
         return true;
     } catch (error) {
         console.error("Error deleting user data:", error);
+        return false;
+    }
+}
+
+// Add coins and stars after a game (adds to the old numbers)
+export async function addRewards(userId, coins, stars) {
+    try {
+        await updateDoc(doc(db, "users", userId), {
+            coins: increment(coins),
+            stars: increment(stars)
+        });
+        return true;
+    } catch (error) {
+        console.error("Error adding rewards:", error);
         return false;
     }
 }
