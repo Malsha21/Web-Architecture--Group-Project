@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
+import { api, type UserProfile } from './lib/api';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   LayoutDashboard, Users, BookOpen, GraduationCap, Settings, Search, Plus,
@@ -1904,20 +1905,55 @@ function AdminDashboard({ nav }: { nav: (s: Screen) => void }) {
   );
 }
 
-const ALL_USERS = [
-  { name: 'Chamara Perera', email: 'chamara@school.lk', role: 'Student', grade: 'Grade 3', status: 'Active', joined: 'Sep 1, 2026' },
-  { name: 'Dilani Silva', email: 'dilani@school.lk', role: 'Student', grade: 'Grade 3', status: 'Active', joined: 'Sep 2, 2026' },
-  { name: 'Ravi Nandana', email: 'ravi@school.lk', role: 'Student', grade: 'Grade 3', status: 'Active', joined: 'Sep 3, 2026' },
-  { name: 'Fatima Hussain', email: 'fatima@school.lk', role: 'Student', grade: 'Grade 3', status: 'Inactive', joined: 'Sep 5, 2026' },
-  { name: 'Nimal Kumara', email: 'nimal@school.lk', role: 'Teacher', grade: '—', status: 'Active', joined: 'Aug 15, 2026' },
-  { name: 'Priya Jayasinghe', email: 'priya@school.lk', role: 'Teacher', grade: '—', status: 'Active', joined: 'Aug 20, 2026' },
-  { name: 'System Admin', email: 'admin@edulanka.lk', role: 'Admin', grade: '—', status: 'Active', joined: 'Jan 1, 2026' },
-];
+type AdminUserRow = {
+  name: string;
+  email: string;
+  role: string;
+  grade: string;
+  status: string;
+  joined: string;
+};
+
+function formatJoinedDate(value: unknown): string {
+  // Firestore timestamps arrive as JSON objects like { _seconds, _nanoseconds }; ISO strings are also possible.
+  const seconds = (value as { _seconds?: number } | null)?._seconds;
+  const date = typeof seconds === 'number'
+    ? new Date(seconds * 1000)
+    : typeof value === 'string' ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '—';
+}
+
+function toAdminUserRow(user: UserProfile): AdminUserRow {
+  const role = String(user.role || 'student');
+  return {
+    name: user.displayName?.trim() || user.email || 'Unnamed user',
+    email: user.email || '—',
+    role: role.charAt(0).toUpperCase() + role.slice(1),
+    grade: user.grade || '—',
+    status: 'Active',
+    joined: formatJoinedDate(user.createdAt),
+  };
+}
 
 function AdminUsers() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'All' | 'Student' | 'Teacher' | 'Admin'>('All');
-  const filtered = ALL_USERS.filter(u =>
+  const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.listUsers()
+      .then(res => { if (!cancelled) setUsers(res.users.map(toAdminUserRow)); })
+      .catch(error => { if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Unable to load users.'); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = users.filter(u =>
     (filter === 'All' || u.role === filter) &&
     u.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -1959,6 +1995,13 @@ function AdminUsers() {
               <th className="px-5 py-4" />
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
+              {(isLoading || loadError || (!isLoading && filtered.length === 0)) && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400">
+                    {isLoading ? 'Loading users...' : loadError ? loadError : 'No users found.'}
+                  </td>
+                </tr>
+              )}
               {filtered.map((u, i) => (
                 <tr key={i} className="hover:bg-slate-50 group">
                   <td className="px-6 py-4">
@@ -2238,21 +2281,18 @@ function useFirebaseLogin(nav: (screen: Screen) => void) {
 
     setIsLoading(true);
     try {
-      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      let profileSnapshot;
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+
+      // The role is decided by the backend (verified token claim), not by the browser.
+      let me: UserProfile;
       try {
-        profileSnapshot = await getDoc(doc(db, 'users', credential.user.uid));
+        me = await api.getMe();
       } catch {
-        setError('Unable to load your account role. Please try again.');
+        setError('Unable to load your account role. Please check your connection and try again.');
         return;
       }
 
-      if (!profileSnapshot.exists()) {
-        setError('Your account profile was not found. Please contact an administrator.');
-        return;
-      }
-
-      const destination = getDashboardForRole(profileSnapshot.data().role);
+      const destination = getDashboardForRole(me.role);
       if (!destination) {
         setError('Your account role is not recognized. Please contact an administrator.');
         return;
