@@ -34,6 +34,10 @@ react(),
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
+      // Browser calls /api/... on the frontend origin; Vite forwards them to the Express backend.
+      proxy: {
+        '/api': { target: process.env.BACKEND_URL || 'http://localhost:3000', changeOrigin: true },
+      },
       watch: {
         ignored: [
           '**/.figma/**',
@@ -43,6 +47,9 @@ react(),
     preview: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
+      proxy: {
+        '/api': { target: process.env.BACKEND_URL || 'http://localhost:3000', changeOrigin: true },
+      },
     },
   }
 })

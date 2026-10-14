@@ -9,11 +9,13 @@ const allowedProfileFields = new Set(['displayName', 'grade', 'language']);
 router.get('/me', requireAuth, async (req, res, next) => {
   try {
     const snapshot = await db.collection('users').doc(req.user.uid).get();
+    const data = snapshot.exists ? snapshot.data() : {};
+    // Role must come from the verified token claim (set by admin), not from the stored profile.
     return res.json({
+      ...data,
       uid: req.user.uid,
-      email: req.user.email || null,
-      role: req.user.role || 'student',
-      ...(snapshot.exists ? snapshot.data() : {}),
+      email: req.user.email || data.email || null,
+      role: req.user.role || data.role || 'student',
     });
   } catch (error) {
     return next(error);
