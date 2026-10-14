@@ -19,3 +19,10 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+
+# Firebase service account keys (never commit)
+backend/serviceAccountKey.json
+**/*firebase-adminsdk*.json
+*serviceAccount*.json
+*.pem
