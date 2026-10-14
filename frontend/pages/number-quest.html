@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Number Quest | EduLanka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfbf6;
+    --card: #ffffff;
+    --ink: #14213d;
+    --muted: #5b6478;
+    --blue: #1a5cff;
+    --blue-dark: #1246c9;
+    --yellow: #f7b500;
+    --yellow-dark: #d98f00;
+    --green: #1f9d55;
+    --green-soft: #dcf7e6;
+    --red: #d64545;
+    --red-soft: #fde4e4;
+    --peach: #ffedd5;
+    --line: #e7e5dc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; background: #fff; border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 900; font-size: 22px; color: #1d3a8a; text-decoration: none; }
+  .back {
+    font-weight: 800; color: var(--ink); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; background: #fff;
+  }
+  .back:hover { border-color: var(--blue); color: var(--blue); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .panel {
+    background: var(--card); border-radius: 32px; padding: 28px;
+    box-shadow: 0 10px 30px rgba(20, 33, 61, .08);
+  }
+  .hidden { display: none !important; }
+
+  /* Start screen */
+  .start { text-align: center; }
+  .start .icon {
+    width: 110px; height: 110px; margin: 0 auto 18px; border-radius: 28px;
+    background: var(--peach); display: grid; place-items: center; font-size: 60px;
+  }
+  .start h1 { font-size: 40px; margin: 0 0 8px; font-weight: 900; }
+  .start p { color: var(--muted); font-size: 18px; margin: 0 0 26px; line-height: 1.5; }
+  .level-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 26px; }
+  .level {
+    font: inherit; font-weight: 800; font-size: 16px; cursor: pointer;
+    padding: 10px 20px; border-radius: 999px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+  }
+  .level[aria-pressed="true"] { border-color: var(--blue); background: #eaf0ff; color: var(--blue); }
+
+  .btn-main {
+    font: inherit; font-weight: 900; font-size: 20px; cursor: pointer; border: 0;
+    color: #fff; background: var(--blue); padding: 16px 40px; border-radius: 999px;
+    box-shadow: 0 5px 0 var(--blue-dark);
+  }
+  .btn-main:hover { background: #2a68ff; }
+  .btn-main:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--blue-dark); }
+  .btn-yellow { background: var(--yellow); color: #3a2a00; box-shadow: 0 5px 0 var(--yellow-dark); }
+  .btn-yellow:hover { background: #ffc61f; }
+  .btn-yellow:active { box-shadow: 0 2px 0 var(--yellow-dark); }
+  .btn-line {
+    font: inherit; font-weight: 800; font-size: 18px; cursor: pointer; text-decoration: none; display: inline-block;
+    padding: 14px 30px; border-radius: 999px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+  }
+  .btn-line:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* Game screen */
+  .hud { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; font-weight: 800; }
+  .chip { background: #fff7db; color: #7a5600; border-radius: 999px; padding: 6px 14px; }
+  .bar { height: 14px; background: #eef0f6; border-radius: 999px; overflow: hidden; margin-bottom: 30px; }
+  .bar > span { display: block; height: 100%; width: 0; background: var(--blue); border-radius: 999px; transition: width .35s ease; }
+
+  .question {
+    text-align: center; font-weight: 900; font-size: clamp(44px, 12vw, 76px);
+    letter-spacing: 1px; margin: 10px 0 34px;
+  }
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .answer {
+    font: inherit; font-weight: 900; font-size: 32px; cursor: pointer;
+    padding: 22px 10px; border-radius: 22px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+    transition: transform .1s ease, border-color .1s ease;
+  }
+  .answer:hover:not(:disabled) { border-color: var(--blue); transform: translateY(-2px); }
+  .answer:disabled { cursor: default; }
+  .answer.right { background: var(--green-soft); border-color: var(--green); color: #0f6b38; }
+  .answer.wrong { background: var(--red-soft); border-color: var(--red); color: #9b2323; }
+
+  .feedback { min-height: 32px; text-align: center; font-weight: 800; font-size: 20px; margin-top: 22px; }
+  .feedback.good { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+
+  /* Result screen */
+  .result { text-align: center; }
+  .stars { font-size: 56px; letter-spacing: 6px; margin-bottom: 6px; }
+  .result h2 { font-size: 34px; margin: 0 0 8px; font-weight: 900; }
+  .result .score { font-size: 20px; color: var(--muted); margin: 0 0 18px; }
+  .reward { display: inline-block; background: #fff7db; color: #7a5600; font-weight: 900; font-size: 22px; padding: 10px 22px; border-radius: 999px; margin-bottom: 8px; }
+  .save-note { font-size: 14px; color: var(--muted); margin: 6px 0 26px; min-height: 20px; }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 480px) {
+    .panel { padding: 20px; border-radius: 26px; }
+    .answer { font-size: 26px; padding: 18px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">EduLanka</a>
+  <!-- CHANGE this link to your real Games page address -->
+  <a class="back" href="games.html" id="backLink">Back to games</a>
+</header>
+
+<main>
+
+  <!-- 1. Start screen -->
+  <section class="panel start" id="startScreen">
+    <div class="icon" aria-hidden="true">🧮</div>
+    <h1>Number Quest</h1>
+    <p>Answer 10 maths questions. Every right answer earns you 10 coins.</p>
+    <div class="level-row" role="group" aria-label="Choose a level">
+      <button class="level" data-level="easy" aria-pressed="true">Easy</button>
+      <button class="level" data-level="medium" aria-pressed="false">Medium</button>
+      <button class="level" data-level="hard" aria-pressed="false">Hard</button>
+    </div>
+    <button class="btn-main btn-yellow" id="startBtn">Start playing</button>
+  </section>
+
+  <!-- 2. Game screen -->
+  <section class="panel hidden" id="gameScreen" aria-live="polite">
+    <div class="hud">
+      <span class="chip" id="qCount">Question 1 of 10</span>
+      <span class="chip" id="scoreChip">Coins: 0</span>
+    </div>
+    <div class="bar" aria-hidden="true"><span id="barFill"></span></div>
+    <div class="question" id="questionText">2 + 2 = ?</div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+  <!-- 3. Result screen -->
+  <section class="panel result hidden" id="resultScreen">
+    <div class="stars" id="resultStars" aria-hidden="true"></div>
+    <h2 id="resultTitle">Well done!</h2>
+    <p class="score" id="resultScore"></p>
+    <div class="reward" id="resultReward"></div>
+    <p class="save-note" id="saveNote"></p>
+    <div class="result-actions">
+      <button class="btn-main" id="againBtn">Play again</button>
+      <a class="btn-line" href="games.html" id="backLink2">Back to games</a>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var TOTAL_QUESTIONS = 10;
+  var COINS_PER_CORRECT = 10;
+
+  var level = "easy";
+  var current = 0;
+  var correct = 0;
+  var locked = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var startScreen = $("startScreen"), gameScreen = $("gameScreen"), resultScreen = $("resultScreen");
+
+  // ---------- Level buttons ----------
+  var levelButtons = document.querySelectorAll(".level");
+  levelButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      level = btn.getAttribute("data-level");
+      levelButtons.forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+    });
+  });
+
+  // ---------- Question maker ----------
+  function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+  function makeQuestion() {
+    var a, b, op, answer;
+    if (level === "easy") {
+      op = Math.random() < 0.5 ? "+" : "-";
+      a = rand(1, 10); b = rand(1, 10);
+      if (op === "-" && b > a) { var t = a; a = b; b = t; }
+    } else if (level === "medium") {
+      var pick = rand(0, 2);
+      op = pick === 0 ? "+" : pick === 1 ? "-" : "×";
+      if (op === "×") { a = rand(2, 9); b = rand(2, 9); }
+      else { a = rand(10, 60); b = rand(5, 40); if (op === "-" && b > a) { var t2 = a; a = b; b = t2; } }
+    } else {
+      var pick2 = rand(0, 2);
+      op = pick2 === 0 ? "+" : pick2 === 1 ? "-" : "×";
+      if (op === "×") { a = rand(6, 12); b = rand(6, 12); }
+      else { a = rand(50, 200); b = rand(20, 120); if (op === "-" && b > a) { var t3 = a; a = b; b = t3; } }
+    }
+    answer = op === "+" ? a + b : op === "-" ? a - b : a * b;
+
+    // 3 wrong options that are close to the right answer, all different
+    var options = [answer];
+    var guard = 0;
+    while (options.length < 4 && guard < 100) {
+      guard++;
+      var wrong = answer + rand(-10, 10);
+      if (wrong !== answer && wrong >= 0 && options.indexOf(wrong) === -1) options.push(wrong);
+    }
+    // shuffle
+    for (var i = options.length - 1; i > 0; i--) {
+      var j = rand(0, i);
+      var tmp = options[i]; options[i] = options[j]; options[j] = tmp;
+    }
+    return { text: a + " " + op + " " + b + " = ?", answer: answer, options: options };
+  }
+
+  // ---------- Show a question ----------
+  var currentQuestion = null;
+
+  function showQuestion() {
+    locked = false;
+    currentQuestion = makeQuestion();
+    $("qCount").textContent = "Question " + (current + 1) + " of " + TOTAL_QUESTIONS;
+    $("scoreChip").textContent = "Coins: " + (correct * COINS_PER_CORRECT);
+    $("barFill").style.width = (current / TOTAL_QUESTIONS * 100) + "%";
+    $("questionText").textContent = currentQuestion.text;
+    $("feedback").textContent = "";
+    $("feedback").className = "feedback";
+
+    var box = $("answers");
+    box.innerHTML = "";
+    currentQuestion.options.forEach(function (value) {
+      var btn = document.createElement("button");
+      btn.className = "answer";
+      btn.type = "button";
+      btn.textContent = value;
+      btn.addEventListener("click", function () { choose(btn, value); });
+      box.appendChild(btn);
+    });
+  }
+
+  function choose(btn, value) {
+    if (locked) return;
+    locked = true;
+    var all = document.querySelectorAll(".answer");
+    all.forEach(function (b) { b.disabled = true; });
+
+    var feedback = $("feedback");
+    if (value === currentQuestion.answer) {
+      correct++;
+      btn.classList.add("right");
+      feedback.textContent = "Correct! +" + COINS_PER_CORRECT + " coins";
+      feedback.className = "feedback good";
+    } else {
+      btn.classList.add("wrong");
+      all.forEach(function (b) {
+        if (Number(b.textContent) === currentQuestion.answer) b.classList.add("right");
+      });
+      feedback.textContent = "Not quite. The answer is " + currentQuestion.answer + ".";
+      feedback.className = "feedback bad";
+    }
+    $("scoreChip").textContent = "Coins: " + (correct * COINS_PER_CORRECT);
+
+    setTimeout(function () {
+      current++;
+      if (current >= TOTAL_QUESTIONS) finish(); else showQuestion();
+    }, 1200);
+  }
+
+  // ---------- Finish ----------
+  function starsFor(score) {
+    if (score >= 9) return 3;
+    if (score >= 6) return 2;
+    if (score >= 3) return 1;
+    return 0;
+  }
+
+  function finish() {
+    $("barFill").style.width = "100%";
+    gameScreen.classList.add("hidden");
+    resultScreen.classList.remove("hidden");
+
+    var stars = starsFor(correct);
+    var coins = correct * COINS_PER_CORRECT;
+    $("resultStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+    $("resultStars").style.color = "#f7b500";
+    $("resultTitle").textContent = stars === 3 ? "Amazing work!" : stars === 2 ? "Great job!" : stars === 1 ? "Good try!" : "Keep practising!";
+    $("resultScore").textContent = "You got " + correct + " out of " + TOTAL_QUESTIONS + " right.";
+    $("resultReward").textContent = "+" + coins + " coins";
+    $("saveNote").textContent = "";
+
+    saveRewards(coins, stars).then(function (message) {
+      $("saveNote").textContent = message;
+    });
+  }
+
+  // =====================================================================
+  //  SAVING COINS AND STARS
+  //  For now this saves in the browser only, so the game works by itself.
+  //  LATER: replace the inside of this function with a call to your
+  //  userdata.js (Firebase) so the coins appear on the user's account.
+  // =====================================================================
+  function saveRewards(coins, stars) {
+    return new Promise(function (resolve) {
+      try {
+        var saved = JSON.parse(localStorage.getItem("edulankaRewards") || '{"coins":0,"stars":0}');
+        saved.coins += coins;
+        saved.stars += stars;
+        localStorage.setItem("edulankaRewards", JSON.stringify(saved));
+        resolve("Saved. Total coins: " + saved.coins);
+      } catch (e) {
+        resolve("Your coins could not be saved on this device.");
+      }
+    });
+  }
+
+  // ---------- Buttons ----------
+  function startGame() {
+    current = 0; correct = 0;
+    startScreen.classList.add("hidden");
+    resultScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    showQuestion();
+  }
+  $("startBtn").addEventListener("click", startGame);
+  $("againBtn").addEventListener("click", startGame);
+})();
+</script>
+</body>
+</html>

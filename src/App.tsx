@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { api, type UserProfile } from './lib/api';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -112,6 +112,15 @@ type Screen =
   | 'parent_login' | 'parent_dashboard' | 'parent_student'
   | 'admin_login' | 'admin_dashboard' | 'admin_users'
   | 'admin_content' | 'admin_add_question';
+
+type QuizSubject = 'math' | 'english' | 'sinhala' | 'gk';
+
+type QuizQuestion = {
+  q: string;
+  options: string[];
+  correct: number;
+  hint?: string;
+};
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -573,7 +582,39 @@ function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) 
 }
 
 function ForgotPassword({ nav }: { nav: (s: Screen) => void }) {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, trimmedEmail);
+      setSent(true);
+    } catch (resetError) {
+      const code = resetError instanceof Error && 'code' in resetError ? String(resetError.code) : '';
+      if (code.includes('user-not-found')) {
+        setError('No account was found with that email address.');
+      } else if (code.includes('invalid-email')) {
+        setError('Enter a valid email address.');
+      } else {
+        setError('Unable to send the reset link. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 p-6">
       <div className="bg-white rounded-[2rem] p-10 shadow-xl max-w-md w-full">
@@ -584,15 +625,33 @@ function ForgotPassword({ nav }: { nav: (s: Screen) => void }) {
           <div className="text-center py-6">
             <span className="text-6xl mb-4 block">📧</span>
             <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Check your email!</h2>
-            <p className="text-slate-500">We sent a password reset link to your email address.</p>
+            <p role="status" className="text-slate-500">Password reset link sent! Please check your inbox/spam folder.</p>
             <button onClick={() => nav('student_login')} className="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Back to Login</button>
           </div>
         ) : (
           <>
             <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Forgot Password?</h2>
             <p className="text-slate-500 text-sm mb-6">Enter your email and we'll send you a reset link.</p>
-            <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} />
-            <button onClick={() => setSent(true)} className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors">Send Reset Link</button>
+            <form onSubmit={handleSubmit}>
+              <label htmlFor="reset-email" className="block text-sm font-bold text-slate-700 mb-2">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  id="reset-email"
+                  type="email"
+                  value={email}
+                  onChange={event => { setEmail(event.target.value); setError(''); }}
+                  placeholder="you@school.lk"
+                  autoComplete="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+              {error && <p role="alert" className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
+              <button type="submit" disabled={loading} className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors">
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
           </>
         )}
       </div>
@@ -605,6 +664,8 @@ function ForgotPassword({ nav }: { nav: (s: Screen) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function StudentShell({ screen, nav, lang, setLang, t }: { screen: Screen; nav: (s: Screen) => void; lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeQuizSubject, setActiveQuizSubject] = useState<QuizSubject>('math');
+  const [quizResult, setQuizResult] = useState({ score: 0, total: getQuizQuestions('math').length });
   const studentNavItems: { id: Screen; icon: React.ReactNode; label: string }[] = [
     { id: 'student_dashboard', icon: <Home />, label: t('home') },
     { id: 'student_subjects', icon: <BookOpen />, label: t('subjects') },
@@ -701,12 +762,12 @@ function StudentShell({ screen, nav, lang, setLang, t }: { screen: Screen; nav: 
         {screen === 'student_subjects' && <SubjectsPage nav={nav} t={t} />}
         {screen === 'student_grade' && <GradeSelection nav={nav} />}
         {screen === 'student_lesson_list' && <LessonList nav={nav} />}
-        {screen === 'student_lesson' && <LessonView nav={nav} />}
+        {screen === 'student_lesson' && <LessonView nav={nav} onStartQuiz={subject => { setActiveQuizSubject(subject); nav('student_quiz'); }} />}
         {screen === 'student_games' && <GamesPage nav={nav} t={t} />}
         {screen === 'student_game_play' && <GamePlay nav={nav} />}
-        {screen === 'student_quiz_select' && <QuizSelect nav={nav} t={t} />}
-        {screen === 'student_quiz' && <QuizPlay nav={nav} />}
-        {screen === 'student_quiz_result' && <QuizResult nav={nav} />}
+        {screen === 'student_quiz_select' && <QuizSelect nav={nav} t={t} onStartQuiz={subject => { setActiveQuizSubject(subject); nav('student_quiz'); }} />}
+        {screen === 'student_quiz' && <QuizPlay subject={activeQuizSubject} nav={nav} onFinish={score => { setQuizResult({ score, total: getQuizQuestions(activeQuizSubject).length }); nav('student_quiz_result'); }} />}
+        {screen === 'student_quiz_result' && <QuizResult nav={nav} score={quizResult.score} total={quizResult.total} />}
         {screen === 'student_progress' && <ProgressPage nav={nav} t={t} />}
         {screen === 'student_profile' && <StudentProfile nav={nav} t={t} />}
       </main>
@@ -921,7 +982,7 @@ function LessonList({ nav }: { nav: (s: Screen) => void }) {
   );
 }
 
-function LessonView({ nav }: { nav: (s: Screen) => void }) {
+function LessonView({ nav, onStartQuiz }: { nav: (s: Screen) => void; onStartQuiz: (subject: QuizSubject) => void }) {
   const [page, setPage] = useState(0);
   const pages = [
     { title: 'What is Addition?', content: 'Addition is the process of combining two or more numbers together to find their total, or "sum".', example: '3 + 4 = 7 🍎🍎🍎 + 🍎🍎🍎🍎 = 🍎🍎🍎🍎🍎🍎🍎', illustration: '➕' },
@@ -967,7 +1028,7 @@ function LessonView({ nav }: { nav: (s: Screen) => void }) {
             Next →
           </button>
         ) : (
-          <button onClick={() => nav('student_quiz')} className="flex-1 btn-chunky bg-green-500 shadow-[0_5px_0_#16A34A] hover:bg-green-600 text-white font-extrabold py-3.5 rounded-2xl active:translate-y-1 active:shadow-none transition-all">
+          <button onClick={() => onStartQuiz('english')} className="flex-1 btn-chunky bg-green-500 shadow-[0_5px_0_#16A34A] hover:bg-green-600 text-white font-extrabold py-3.5 rounded-2xl active:translate-y-1 active:shadow-none transition-all">
             ✅ Complete Lesson!
           </button>
         )}
@@ -1061,17 +1122,17 @@ function GamePlay({ nav }: { nav: (s: Screen) => void }) {
   );
 }
 
-function QuizSelect({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => string }) {
+function QuizSelect({ nav, t, onStartQuiz }: { nav: (s: Screen) => void; t: (k: string) => string; onStartQuiz: (subject: QuizSubject) => void }) {
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
       <h1 className="text-3xl font-extrabold text-slate-900 mb-2">{t('quizzes')} ✅</h1>
       <p className="text-slate-500 mb-8">Test your knowledge and earn stars!</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {[
-          { title: 'Maths Week 3 Quiz', subject: 'Mathematics', emoji: '🧮', questions: 10, time: '10 min', stars: 3, color: 'border-orange-200 bg-orange-50' },
-          { title: 'English Phonics Quiz', subject: 'English', emoji: '🔤', questions: 8, time: '8 min', stars: 2, color: 'border-cyan-200 bg-cyan-50' },
-          { title: 'Sinhala Vowels Quiz', subject: 'Sinhala', emoji: '📝', questions: 12, time: '12 min', stars: 0, color: 'border-purple-200 bg-purple-50' },
-          { title: 'Sri Lanka General Knowledge', subject: 'Gen. Knowledge', emoji: '🌍', questions: 15, time: '15 min', stars: 0, color: 'border-green-200 bg-green-50' },
+          { title: 'Maths Week 3 Quiz', subject: 'Mathematics', subjectKey: 'math', emoji: '🧮', questions: 10, time: '10 min', stars: 3, color: 'border-orange-200 bg-orange-50' },
+          { title: 'English Alphabet Quiz', subject: 'English Alphabet', subjectKey: 'english', emoji: '🔤', questions: 3, time: '3 min', stars: 0, color: 'border-cyan-200 bg-cyan-50' },
+          { title: 'Sinhala Vowels Quiz', subject: 'Sinhala', subjectKey: 'sinhala', emoji: '📝', questions: 12, time: '12 min', stars: 0, color: 'border-purple-200 bg-purple-50' },
+          { title: 'Sri Lanka General Knowledge', subject: 'Gen. Knowledge', subjectKey: 'gk', emoji: '🌍', questions: 15, time: '15 min', stars: 0, color: 'border-green-200 bg-green-50' },
         ].map((q, i) => (
           <div key={i} className={`rounded-2xl border-2 p-5 ${q.color}`}>
             <div className="flex items-start gap-4 mb-4">
@@ -1089,7 +1150,7 @@ function QuizSelect({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => st
               <span>⏱ {q.time}</span>
               {q.stars > 0 && <span className="text-green-600">✅ Attempted</span>}
             </div>
-            <button onClick={() => nav('student_quiz')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl transition-colors">
+            <button onClick={() => onStartQuiz(q.subjectKey as QuizSubject)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl transition-colors">
               {q.stars > 0 ? 'Retake Quiz' : 'Start Quiz'} →
             </button>
           </div>
@@ -1099,29 +1160,76 @@ function QuizSelect({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => st
   );
 }
 
-const QUIZ_QS = [
-  { q: 'What is 5 + 3?', options: ['6', '7', '8', '9'], correct: 2, hint: 'Count on your fingers! 5 fingers, then 3 more.' },
-  { q: 'Which number comes after 9?', options: ['8', '10', '11', '7'], correct: 1, hint: 'Think of the number line! 1, 2, 3... 🔢' },
-  { q: 'What is 10 - 4?', options: ['5', '6', '7', '8'], correct: 1, hint: 'Start at 10, count back 4 steps. 🤚' },
-];
+const QUIZ_QUESTIONS: Record<QuizSubject, QuizQuestion[]> = {
+  math: [
+    { q: 'What is 5 + 3?', options: ['6', '7', '8', '9'], correct: 1, hint: 'Count on your fingers! 5 fingers, then 3 more.' },
+    { q: 'Which number comes after 9?', options: ['8', '10', '11', '7'], correct: 1, hint: 'Think of the number line! 1, 2, 3... 🔢' },
+    { q: 'What is 10 - 4?', options: ['5', '6', '7', '8'], correct: 2, hint: 'Start at 10, count back 4 steps. 🤚' },
+  ],
+  english: [
+    { q: 'Which of these is a vowel?', options: ['B', 'E', 'K', 'T'], correct: 1 },
+    { q: 'How many vowels are in the English alphabet?', options: ['3', '4', '5', '6'], correct: 2 },
+    { q: 'Which letter is NOT a vowel?', options: ['A', 'I', 'M', 'U'], correct: 2 },
+  ],
+  sinhala: [],
+  gk: [],
+};
 
-function QuizPlay({ nav }: { nav: (s: Screen) => void }) {
+function getQuizQuestions(subject: QuizSubject): QuizQuestion[] {
+  return QUIZ_QUESTIONS[subject];
+}
+
+function QuizPlay({ nav, onFinish, subject }: { nav: (s: Screen) => void; onFinish?: (score: number) => void; subject: QuizSubject }) {
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [score, setScore] = useState(0);
-  const q = QUIZ_QS[qIdx];
+  const quizQuestions = getQuizQuestions(subject);
+  const q = quizQuestions[qIdx];
   const COLORS = ['bg-orange-400 shadow-[0_5px_0_#EA580C]', 'bg-green-400 shadow-[0_5px_0_#16A34A]', 'bg-blue-400 shadow-[0_5px_0_#0369A1]', 'bg-purple-400 shadow-[0_5px_0_#9333EA]'];
 
+  if (!quizQuestions.length) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <div className="bg-white rounded-3xl p-10 shadow-md border border-slate-100">
+          <p className="text-5xl mb-4">🚧</p>
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Quiz coming soon</h2>
+          <p className="text-slate-500">This subject is still being prepared. Check back soon.</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleNext = () => {
-    if (qIdx < QUIZ_QS.length - 1) {
+    if (qIdx < quizQuestions.length - 1) {
       setQIdx(i => i + 1);
       setSelected(null);
       setSubmitted(false);
       setShowHint(false);
+    }
+  };
+
+  const handlePrimaryAction = () => {
+    if (selected === null) return;
+
+    if (!submitted) {
+      const isCorrect = selected === q.correct;
+      const nextScore = isCorrect ? score + 1 : score;
+      setSubmitted(true);
+      if (isCorrect) {
+        setScore(s => s + 1);
+      }
+      if (qIdx === quizQuestions.length - 1) {
+        onFinish?.(nextScore);
+      }
+      return;
+    }
+
+    if (qIdx < quizQuestions.length - 1) {
+      handleNext();
     } else {
-      nav('student_quiz_result');
+      onFinish?.(score);
     }
   };
 
@@ -1133,11 +1241,11 @@ function QuizPlay({ nav }: { nav: (s: Screen) => void }) {
         </button>
         <div className="flex-1">
           <div className="flex justify-between text-xs font-bold text-slate-400 mb-1.5">
-            <span>Question {qIdx + 1} of {QUIZ_QS.length}</span>
+            <span>Question {qIdx + 1} of {quizQuestions.length}</span>
             <span className="text-amber-600">🪙 +{score * 10} coins</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-3">
-            <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-3 rounded-full transition-all" style={{ width: `${((qIdx) / QUIZ_QS.length) * 100}%` }} />
+            <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-3 rounded-full transition-all" style={{ width: `${((qIdx) / quizQuestions.length) * 100}%` }} />
           </div>
         </div>
         <div className="flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
@@ -1183,23 +1291,23 @@ function QuizPlay({ nav }: { nav: (s: Screen) => void }) {
           <HelpCircle className="w-5 h-5" /> Hint
         </button>
         <button
-          onClick={() => { if (!submitted) { setSubmitted(true); if (selected === q.correct) setScore(s => s + 1); } else { handleNext(); } }}
+          onClick={handlePrimaryAction}
           disabled={selected === null}
           className={`flex-1 py-4 rounded-2xl font-extrabold text-base transition-all shadow-[0_5px_0_#D97706] btn-chunky active:translate-y-1 active:shadow-none ${
             selected === null ? 'bg-slate-200 text-slate-400 shadow-[0_5px_0_#CBD5E1] cursor-not-allowed' : 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900'
           }`}
         >
-          {submitted ? (qIdx < QUIZ_QS.length - 1 ? 'Next Question →' : '🏁 See Results') : '✅ Submit'}
+          {submitted ? (qIdx < quizQuestions.length - 1 ? 'Next Question →' : '🏁 See Results') : '✅ Submit'}
         </button>
       </div>
     </div>
   );
 }
 
-function QuizResult({ nav }: { nav: (s: Screen) => void }) {
-  const score = 8; const total = 10;
-  const pct = Math.round((score / total) * 100);
+function QuizResult({ nav, score, total }: { nav: (s: Screen) => void; score: number; total: number }) {
+  const pct = total > 0 ? Math.round((score / total) * 100) : 0;
   const rating = pct >= 80 ? { label: 'Excellent!', emoji: '🏆', stars: 3 } : pct >= 60 ? { label: 'Good Job!', emoji: '🎉', stars: 2 } : { label: 'Keep Trying!', emoji: '💪', stars: 1 };
+  const wrong = total - score;
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10 flex flex-col items-center text-center">
@@ -1220,7 +1328,7 @@ function QuizResult({ nav }: { nav: (s: Screen) => void }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 w-full mb-8">
         <StatBox value={score.toString()} label="Correct ✅" color="bg-green-50 border-green-200 text-green-800" />
-        <StatBox value={(total - score).toString()} label="Wrong ❌" color="bg-red-50 border-red-200 text-red-800" />
+        <StatBox value={wrong.toString()} label="Wrong ❌" color="bg-red-50 border-red-200 text-red-800" />
         <StatBox value={`+${score * 10}`} label="Coins 🪙" color="bg-yellow-50 border-yellow-200 text-yellow-800" />
       </div>
 
