@@ -5,22 +5,23 @@ service cloud.firestore {
 
     match /users/{userId} {
 
-      // A logged-in user can read their own profile.
+      // User කෙනෙකුට තමන්ගේ profile එක විතරක් read කරන්න පුළුවන්.
       allow read: if request.auth != null
                   && request.auth.uid == userId;
 
-      // A logged-in user can create their own profile.
+      // Profile එක create කරන්න පුළුවන්, නමුත් role එක 'student' වෙන්න ඕනේ.
       allow create: if request.auth != null
-                    && request.auth.uid == userId;
+                    && request.auth.uid == userId
+                    && request.resource.data.role == 'student';
 
-      // A user can update their own profile.
+      // Update කරන්න පුළුවන් profile fields විතරයි. Role, email, uid වෙනස් කරන්න බැහැ.
       allow update: if request.auth != null
-                    && request.auth.uid == userId;
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['displayName', 'grade', 'language', 'updatedAt']);
 
-      // Users cannot delete their own profile.
-      // Admin access can be added separately.
+      // Delete කරන්න බැහැ.
       allow delete: if false;
     }
   }
 }
-
