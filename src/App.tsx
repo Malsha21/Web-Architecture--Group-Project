@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
@@ -572,7 +572,39 @@ function StudentRegister({ nav, t }: { nav: (s: Screen) => void; t: (k: string) 
 }
 
 function ForgotPassword({ nav }: { nav: (s: Screen) => void }) {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, trimmedEmail);
+      setSent(true);
+    } catch (resetError) {
+      const code = resetError instanceof Error && 'code' in resetError ? String(resetError.code) : '';
+      if (code.includes('user-not-found')) {
+        setError('No account was found with that email address.');
+      } else if (code.includes('invalid-email')) {
+        setError('Enter a valid email address.');
+      } else {
+        setError('Unable to send the reset link. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 p-6">
       <div className="bg-white rounded-[2rem] p-10 shadow-xl max-w-md w-full">
@@ -583,15 +615,33 @@ function ForgotPassword({ nav }: { nav: (s: Screen) => void }) {
           <div className="text-center py-6">
             <span className="text-6xl mb-4 block">📧</span>
             <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Check your email!</h2>
-            <p className="text-slate-500">We sent a password reset link to your email address.</p>
+            <p role="status" className="text-slate-500">Password reset link sent! Please check your inbox/spam folder.</p>
             <button onClick={() => nav('student_login')} className="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Back to Login</button>
           </div>
         ) : (
           <>
             <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Forgot Password?</h2>
             <p className="text-slate-500 text-sm mb-6">Enter your email and we'll send you a reset link.</p>
-            <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} />
-            <button onClick={() => setSent(true)} className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-colors">Send Reset Link</button>
+            <form onSubmit={handleSubmit}>
+              <label htmlFor="reset-email" className="block text-sm font-bold text-slate-700 mb-2">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  id="reset-email"
+                  type="email"
+                  value={email}
+                  onChange={event => { setEmail(event.target.value); setError(''); }}
+                  placeholder="you@school.lk"
+                  autoComplete="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+              {error && <p role="alert" className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
+              <button type="submit" disabled={loading} className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors">
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
           </>
         )}
       </div>
