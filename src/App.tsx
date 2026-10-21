@@ -103,6 +103,7 @@ function useT(lang: Lang) {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen =
   | 'landing'
+  | 'welcome'
   | 'student_login' | 'student_register' | 'student_forgot'
   | 'student_dashboard' | 'student_subjects' | 'student_grade'
   | 'student_lesson_list' | 'student_lesson'
@@ -145,11 +146,72 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#FDFDF8] font-sans">
       {screen === 'landing' && <LandingPage nav={nav} lang={lang} setLang={setLang} t={t} />}
+      {screen === 'welcome' && <WelcomePage nav={nav} />}
       {screen === 'student_login' && <StudentLogin nav={nav} t={t} />}
       {screen === 'student_register' && <StudentRegister nav={nav} t={t} />}
       {screen === 'student_forgot' && <ForgotPassword nav={nav} />}
       {screen === 'parent_login' && <ParentLogin nav={nav} />}
       {screen === 'admin_login' && <AdminLogin nav={nav} />}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// WELCOME PAGE
+// ────────────────────────────────────────────────────────────────────────
+function WelcomePage({ nav }: { nav: (s: Screen) => void }) {
+  const features = [
+    { icon: BookOpen, title: 'Learn', desc: 'Maths, Sinhala and English lessons for your grade.', bg: 'bg-blue-100 text-blue-700' },
+    { icon: Trophy, title: 'Take quizzes', desc: 'Test what you know and earn points as you go.', bg: 'bg-amber-100 text-amber-700' },
+    { icon: Zap, title: 'Play games', desc: 'Fun puzzles that make practice feel like play.', bg: 'bg-green-100 text-green-700' },
+    { icon: TrendingUp, title: 'Track progress', desc: 'See how far you have come, one step at a time.', bg: 'bg-purple-100 text-purple-700' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-[#FDFDF8] to-[#FDFDF8] flex flex-col">
+      <header className="max-w-6xl w-full mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <ElephantMascot size={34} />
+          <span className="font-extrabold text-xl text-blue-900">EduLanka</span>
+        </div>
+        <button onClick={() => nav('landing')} className="text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors">
+          ← Back to home
+        </button>
+      </header>
+
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 py-10 md:py-16">
+        <section className="text-center max-w-2xl mx-auto">
+          <div className="inline-block mb-6">
+            <ElephantMascot size={120} />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">Welcome to EduLanka! 🎉</h1>
+          <p className="text-slate-600 text-lg leading-relaxed mb-8">
+            Learn, play and grow every day. Sign in to pick up where you left off, or create a free student account to start.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onClick={() => nav('student_register')} className="btn-chunky bg-yellow-400 shadow-[0_6px_0_#D97706] hover:bg-yellow-500 text-yellow-900 font-extrabold px-8 py-4 rounded-2xl text-base active:translate-y-1.5 active:shadow-none transition-all">
+              Register
+            </button>
+            <button onClick={() => nav('student_login')} className="bg-white border-2 border-blue-200 hover:border-blue-400 text-blue-700 font-extrabold px-8 py-4 rounded-2xl text-base transition-colors">
+              Login
+            </button>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-16">
+          {features.map(f => (
+            <div key={f.title} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-lg transition-shadow">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${f.bg}`}>
+                <f.icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-extrabold text-slate-900 text-lg mb-1">{f.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+
+      <footer className="text-center text-xs text-slate-400 py-6">© EduLanka · Web Architecture Group Project</footer>
     </div>
   );
 }
@@ -184,6 +246,7 @@ function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang
 
           {/* Right side */}
           <div className="ml-auto flex items-center gap-3">
+            <button onClick={() => nav('welcome')} className="hidden md:block px-3 py-2 rounded-lg text-sm font-bold text-blue-700 hover:bg-blue-50 transition-colors">Welcome</button>
             {/* Language selector */}
             <div className="relative hidden md:block">
               <select
