@@ -3,6 +3,9 @@ dist/
 build/
 .cache/
 .env*
+!.env.example
+   serviceAccountKey.json
+   *-firebase-adminsdk-*.json
 .vite/
 vite.config.*.timestamp-*
 *.tsbuildinfo
