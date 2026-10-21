@@ -106,7 +106,7 @@ type Screen =
   | 'student_login' | 'student_register' | 'student_forgot'
   | 'student_dashboard' | 'student_subjects' | 'student_grade'
   | 'student_lesson_list' | 'student_lesson'
-  | 'student_games' | 'student_game_play'
+  | 'student_games'
   | 'student_quiz_select' | 'student_quiz' | 'student_quiz_result'
   | 'student_progress' | 'student_profile'
   | 'parent_login' | 'parent_dashboard' | 'parent_student'
@@ -426,10 +426,10 @@ const SUBJECTS_DATA = [
 ];
 
 const GAMES_DATA = [
-  { id: 'g1', title: 'Number Quest', desc: 'Solve fun maths puzzles!', emoji: '🧮', heroBg: 'bg-orange-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
-  { id: 'g2', title: 'Sinhala Letter Match', desc: 'Match Sinhala letters to pictures!', emoji: '📝', heroBg: 'bg-purple-100', difficulty: 'Medium', diffColor: 'bg-yellow-100 text-yellow-700' },
-  { id: 'g3', title: 'Alphabet Adventure', desc: 'Journey through the English alphabet!', emoji: '🔤', heroBg: 'bg-cyan-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
-  { id: 'g4', title: 'Island Explorer', desc: 'Discover facts about Sri Lanka!', emoji: '🌍', heroBg: 'bg-green-100', difficulty: 'Hard', diffColor: 'bg-red-100 text-red-700' },
+  { id: 'g1', file: 'number-quest.html', title: 'Number Quest', desc: 'Solve fun maths puzzles!', emoji: '🧮', heroBg: 'bg-orange-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
+  { id: 'g2', file: 'sinhala-letter-match.html', title: 'Sinhala Letter Match', desc: 'Match Sinhala letters to pictures!', emoji: '📝', heroBg: 'bg-purple-100', difficulty: 'Medium', diffColor: 'bg-yellow-100 text-yellow-700' },
+  { id: 'g3', file: 'alphabet-adventure.html', title: 'Alphabet Adventure', desc: 'Journey through the English alphabet!', emoji: '🔤', heroBg: 'bg-cyan-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
+  { id: 'g4', file: 'island-explorer.html', title: 'Island Explorer', desc: 'Discover facts about Sri Lanka!', emoji: '🌍', heroBg: 'bg-green-100', difficulty: 'Hard', diffColor: 'bg-red-100 text-red-700' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -764,7 +764,6 @@ function StudentShell({ screen, nav, lang, setLang, t }: { screen: Screen; nav: 
         {screen === 'student_lesson_list' && <LessonList nav={nav} />}
         {screen === 'student_lesson' && <LessonView nav={nav} onStartQuiz={subject => { setActiveQuizSubject(subject); nav('student_quiz'); }} />}
         {screen === 'student_games' && <GamesPage nav={nav} t={t} />}
-        {screen === 'student_game_play' && <GamePlay nav={nav} />}
         {screen === 'student_quiz_select' && <QuizSelect nav={nav} t={t} onStartQuiz={subject => { setActiveQuizSubject(subject); nav('student_quiz'); }} />}
         {screen === 'student_quiz' && <QuizPlay subject={activeQuizSubject} nav={nav} onFinish={score => { setQuizResult({ score, total: getQuizQuestions(activeQuizSubject).length }); nav('student_quiz_result'); }} />}
         {screen === 'student_quiz_result' && <QuizResult nav={nav} score={quizResult.score} total={quizResult.total} />}
@@ -1052,72 +1051,13 @@ function GamesPage({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => str
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${game.diffColor}`}>{game.difficulty}</span>
               </div>
               <p className="text-slate-500 text-sm mb-4">{game.desc}</p>
-              <button onClick={() => nav('student_game_play')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+              <button onClick={() => window.location.assign(`/games/${game.file}`)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
                 <Play className="w-4 h-4 fill-white" /> Play Now
               </button>
             </div>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function GamePlay({ nav }: { nav: (s: Screen) => void }) {
-  const [score, setScore] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const options = [7, 8, 9, 10];
-
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => nav('student_games')} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200">
-          <X className="w-5 h-5 text-slate-600" />
-        </button>
-        <div className="flex-1">
-          <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
-            <span>Number Quest</span>
-            <span className="text-amber-600">Score: {score}</span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-3">
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 h-3 rounded-full" style={{ width: '40%' }} />
-          </div>
-        </div>
-        <div className="flex items-center gap-1 bg-orange-50 rounded-full px-3 py-1.5 border border-orange-200">
-          <Clock className="w-3.5 h-3.5 text-orange-500" />
-          <span className="font-extrabold text-orange-700 text-sm">0:45</span>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-100 text-center mb-6">
-        <p className="text-slate-500 text-sm font-bold uppercase tracking-wide mb-4">What is the answer?</p>
-        <p className="text-5xl font-extrabold text-slate-900">3 + 4 = ?</p>
-        <div className="flex justify-center gap-4 mt-4">
-          {['🍎🍎🍎', '🍎🍎🍎🍎'].map((s, i) => <span key={i} className="text-2xl">{s}</span>)}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {options.map((opt, i) => {
-          const colors = ['bg-orange-400 shadow-[0_5px_0_#EA580C]', 'bg-green-400 shadow-[0_5px_0_#16A34A]', 'bg-blue-400 shadow-[0_5px_0_#0369A1]', 'bg-purple-400 shadow-[0_5px_0_#9333EA]'];
-          const isSelected = selected === i;
-          return (
-            <button
-              key={i}
-              onClick={() => { setSelected(i); if (opt === 7) setScore(s => s + 10); }}
-              className={`${colors[i]} ${isSelected ? 'ring-4 ring-white/60' : ''} btn-chunky rounded-2xl p-6 text-3xl font-extrabold text-white hover:brightness-105 transition-all active:translate-y-1 active:shadow-none`}
-            >
-              {opt}
-            </button>
-          );
-        })}
-      </div>
-
-      {selected !== null && (
-        <div className={`mt-4 p-4 rounded-2xl text-center font-extrabold text-lg ${options[selected] === 7 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {options[selected] === 7 ? '🎉 Correct! +10 points' : '❌ Try again! The answer is 7'}
-        </div>
-      )}
     </div>
   );
 }
