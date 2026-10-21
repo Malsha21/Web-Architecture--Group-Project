@@ -219,261 +219,1032 @@ function WelcomePage({ nav }: { nav: (s: Screen) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // LANDING PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string }) {
+function LandingPage({
+  nav,
+  lang,
+  setLang,
+  t,
+}: {
+  nav: (s: Screen) => void;
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (k: string) => string;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const login = useFirebaseLogin(nav);
-  const scrollToLogin = () => document.getElementById('unified-login')?.scrollIntoView({ behavior: 'smooth' });
+
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+    setMenuOpen(false);
+  };
+
+  const startLearning = () => {
+    nav('student_register');
+  };
 
   return (
-    <div className="min-h-screen bg-[#FDFDF8]">
-      {/* ── Navbar ── */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center gap-6">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 mr-4 shrink-0">
-            <ElephantMascot size={34} />
-            <span className="font-extrabold text-xl text-blue-900">{t('appName')}</span>
-          </div>
+    <div className="min-h-screen bg-[#FFFDF7] text-slate-800 overflow-x-hidden">
 
-          {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-1 flex-1">
-            {(['home', 'subjects', 'games', 'quizzes', 'about'] as const).map(k => (
-              <button key={k} className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-blue-700 hover:bg-blue-50 transition-colors capitalize">
-                {t(k)}
-              </button>
-            ))}
-          </nav>
+      {/* ================= NAVBAR ================= */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-5 md:px-8 h-20 flex items-center">
 
-          {/* Right side */}
-          <div className="ml-auto flex items-center gap-3">
-            <button onClick={() => nav('welcome')} className="hidden md:block px-3 py-2 rounded-lg text-sm font-bold text-blue-700 hover:bg-blue-50 transition-colors">Welcome</button>
-            {/* Language selector */}
-            <div className="relative hidden md:block">
-              <select
-                value={lang}
-                onChange={e => setLang(e.target.value as Lang)}
-                className="appearance-none pl-8 pr-7 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white cursor-pointer focus:outline-none focus:border-blue-400"
-              >
-                <option value="en">English</option>
-                <option value="si">සිංහල</option>
-                <option value="ta">தமிழ்</option>
-              </select>
-              <Globe className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+          {/* LOGO */}
+          <button
+            onClick={() => scrollTo('home')}
+            className="flex items-center gap-3"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-400 flex items-center justify-center shadow-md rotate-[-3deg]">
+              <GraduationCap className="w-7 h-7 text-white" />
             </div>
 
-            <button onClick={scrollToLogin} className="hidden md:block px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            <div className="text-left">
+              <div className="text-xl font-black tracking-tight text-slate-800">
+                Edu<span className="text-blue-500">Lanka</span>
+              </div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Learn • Play • Grow
+              </div>
+            </div>
+          </button>
+
+          {/* DESKTOP NAV */}
+          <nav className="hidden md:flex items-center gap-2 ml-12">
+            <button
+              onClick={() => scrollTo('home')}
+              className="px-4 py-2 rounded-full text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition"
+            >
+              Home
+            </button>
+
+            <button
+              onClick={() => scrollTo('subjects')}
+              className="px-4 py-2 rounded-full text-sm font-bold text-slate-600 hover:bg-yellow-50 hover:text-yellow-600 transition"
+            >
+              Subjects
+            </button>
+
+            <button
+              onClick={() => scrollTo('games')}
+              className="px-4 py-2 rounded-full text-sm font-bold text-slate-600 hover:bg-purple-50 hover:text-purple-600 transition"
+            >
+              Games
+            </button>
+
+            <button
+              onClick={() => scrollTo('quiz')}
+              className="px-4 py-2 rounded-full text-sm font-bold text-slate-600 hover:bg-green-50 hover:text-green-600 transition"
+            >
+              Quizzes
+            </button>
+
+            <button
+              onClick={() => scrollTo('about')}
+              className="px-4 py-2 rounded-full text-sm font-bold text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition"
+            >
+              About
+            </button>
+          </nav>
+
+          {/* RIGHT SIDE */}
+          <div className="ml-auto flex items-center gap-2">
+
+            {/* LANGUAGE */}
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as Lang)}
+              className="hidden sm:block px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 outline-none"
+            >
+              <option value="en">English</option>
+              <option value="si">සිංහල</option>
+              <option value="ta">தமிழ்</option>
+            </select>
+
+            {/* LOGIN */}
+            <button
+              onClick={() => scrollTo('login')}
+              className="hidden sm:block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition"
+            >
               {t('login')}
             </button>
-            <button onClick={() => nav('student_register')} className="hidden md:block px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition-colors shadow-sm">
+
+            {/* REGISTER */}
+            <button
+              onClick={startLearning}
+              className="hidden sm:flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-black shadow-lg shadow-blue-200 hover:-translate-y-0.5 transition-all"
+            >
               {t('register')}
+              <ArrowRight className="w-4 h-4" />
             </button>
-            <button onClick={() => setMenuOpen(v => !v)} className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+
+            {/* MOBILE MENU */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden p-2.5 rounded-xl bg-slate-100"
+            >
+              {menuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* MOBILE NAV */}
         {menuOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3 space-y-1">
-            {(['home', 'subjects', 'games', 'quizzes', 'about'] as const).map(k => (
-              <button key={k} className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 capitalize">
-                {t(k)}
+          <div className="md:hidden bg-white border-t border-slate-100 px-5 py-5">
+            <div className="flex flex-col gap-2">
+
+              <button
+                onClick={() => scrollTo('home')}
+                className="text-left px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold"
+              >
+                Home
               </button>
-            ))}
-            <div className="pt-2 border-t border-slate-100 flex gap-2">
-              <button onClick={() => { setMenuOpen(false); scrollToLogin(); }} className="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-center">{t('login')}</button>
-              <button onClick={() => nav('student_register')} className="flex-1 py-2 rounded-xl bg-blue-600 text-sm font-semibold text-white text-center">{t('register')}</button>
+
+              <button
+                onClick={() => scrollTo('subjects')}
+                className="text-left px-4 py-3 rounded-xl hover:bg-yellow-50 font-bold"
+              >
+                Subjects
+              </button>
+
+              <button
+                onClick={() => scrollTo('games')}
+                className="text-left px-4 py-3 rounded-xl hover:bg-purple-50 font-bold"
+              >
+                Games
+              </button>
+
+              <button
+                onClick={() => scrollTo('quiz')}
+                className="text-left px-4 py-3 rounded-xl hover:bg-green-50 font-bold"
+              >
+                Quizzes
+              </button>
+
+              <button
+                onClick={() => scrollTo('about')}
+                className="text-left px-4 py-3 rounded-xl hover:bg-orange-50 font-bold"
+              >
+                About
+              </button>
+
+              <div className="flex gap-2 mt-3 pt-3 border-t">
+                <button
+                  onClick={() => scrollTo('login')}
+                  className="flex-1 py-3 rounded-xl border border-slate-200 font-bold"
+                >
+                  Login
+                </button>
+
+                <button
+                  onClick={startLearning}
+                  className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-bold"
+                >
+                  Register
+                </button>
+              </div>
             </div>
           </div>
         )}
       </header>
 
-      {/* ── Hero ── */}
-      <section className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24 flex flex-col md:flex-row items-center gap-12">
-        <div className="flex-1">
-          <div className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 rounded-full px-4 py-1.5 text-xs font-bold mb-6 border border-yellow-200">
-            🇱🇰 Free · For Every Child · No Login Required to Browse
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 leading-[1.1] mb-6">
-            {lang === 'en' && <>Learning made<br /><span className="text-blue-600">fun</span> & <span className="text-yellow-500">free</span> 🌟</>}
-            {lang === 'si' && <>ඉගෙනීම <span className="text-blue-600">විනෝදජනක</span> හා <span className="text-yellow-500">නොමිලේ</span> 🌟</>}
-            {lang === 'ta' && <>கற்றல் <span className="text-blue-600">மகிழ்ச்சியாக</span> & <span className="text-yellow-500">இலவசமாக</span> 🌟</>}
-          </h1>
-          <p className="text-slate-500 text-lg leading-relaxed mb-8 max-w-lg">{t('tagline')} — Maths, Sinhala, English &amp; more, with games and quizzes!</p>
-          <div className="flex flex-wrap gap-4">
-            <button onClick={() => nav('student_register')} className="btn-chunky bg-yellow-400 shadow-[0_6px_0_#D97706] hover:bg-yellow-500 text-yellow-900 font-extrabold px-8 py-4 rounded-2xl text-base active:translate-y-1.5 active:shadow-none transition-all">
-              🚀 {t('startLearning')}
-            </button>
-            <button className="px-8 py-4 rounded-2xl border-2 border-slate-200 font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-all text-base">
-              {t('exploreResources')} →
-            </button>
-          </div>
-          {/* Social proof */}
-          <div className="flex items-center gap-4 mt-8">
-            <div className="flex -space-x-2">
-              {['🧒', '👧', '🧒🏽', '👦🏻', '👧🏾'].map((e, i) => (
-                <span key={i} className="w-9 h-9 bg-white border-2 border-white rounded-full flex items-center justify-center text-base shadow-sm">{e}</span>
-              ))}
-            </div>
-            <p className="text-sm text-slate-500 font-medium"><strong className="text-slate-800">12,000+</strong> students learning today</p>
-          </div>
+      {/* ================= HERO ================= */}
+      <section
+        id="home"
+        className="relative overflow-hidden bg-gradient-to-br from-[#FFF7D6] via-[#F4FAFF] to-[#F3E9FF]"
+      >
+
+        {/* DECORATIONS */}
+        <div className="absolute top-10 left-[-40px] w-32 h-32 bg-yellow-300 rounded-full opacity-60 blur-sm" />
+        <div className="absolute top-24 right-10 w-24 h-24 bg-pink-300 rounded-full opacity-50" />
+        <div className="absolute bottom-[-50px] left-1/3 w-40 h-40 bg-blue-200 rounded-full opacity-40" />
+
+        <div className="absolute top-24 left-[12%] text-yellow-400 text-3xl">
+          ★
         </div>
 
-        {/* Hero illustration */}
-        <div className="flex-1 flex justify-center">
-          <div className="relative">
-            <div className="w-72 h-72 md:w-96 md:h-96 bg-gradient-to-br from-yellow-100 to-blue-100 rounded-[3rem] flex items-center justify-center shadow-xl">
-              <ElephantMascot size={180} />
-            </div>
-            {/* Floating badges */}
-            <div className="absolute -top-4 -right-4 bg-white rounded-2xl p-3 shadow-lg border border-slate-100">
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-extrabold text-slate-800 text-sm">4.9 / 5</span>
-              </div>
-            </div>
-            <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl p-3 shadow-lg border border-slate-100">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-orange-500" />
-                <span className="font-extrabold text-slate-800 text-sm">Free Always</span>
-              </div>
-            </div>
-          </div>
+        <div className="absolute top-36 right-[15%] text-purple-400 text-2xl">
+          ✦
         </div>
-      </section>
 
-      {/* ── Subjects Preview ── */}
-      <section className="bg-white py-16 border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">Explore {t('subjects')} 📚</h2>
-            <p className="text-slate-500 text-lg">Colorful lessons covering every primary school subject</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {SUBJECTS_DATA.map(subj => (
-              <div key={subj.id} onClick={() => nav('student_register')} className="cursor-pointer group bg-white rounded-[1.5rem] border-2 border-slate-100 p-6 hover:border-blue-200 hover:shadow-lg transition-all flex flex-col items-center gap-3 text-center">
-                <div className={`w-16 h-16 ${subj.bgLight} rounded-2xl flex items-center justify-center text-4xl group-hover:scale-110 transition-transform`}>
-                  {subj.emoji}
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-800">{t(subj.nameKey)}</h3>
-                  <p className="text-slate-500 text-xs mt-1">{subj.lessonCount} lessons · {subj.quizCount} quizzes</p>
-                </div>
-                <span className={`text-xs font-bold ${subj.textColor} ${subj.bgLight} px-3 py-1 rounded-full`}>Start →</span>
-              </div>
-            ))}
-          </div>
+        <div className="absolute bottom-20 right-[8%] text-blue-400 text-3xl">
+          ★
         </div>
-      </section>
 
-      {/* ── Games Preview ── */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="flex items-end justify-between mb-10">
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8 py-16 md:py-24">
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+
+            {/* LEFT */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Fun {t('games')} 🎮</h2>
-              <p className="text-slate-500">Play and learn at the same time</p>
-            </div>
-            <button className="hidden md:flex items-center gap-2 text-blue-600 font-bold text-sm hover:underline">See all games <ArrowRight className="w-4 h-4" /></button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {GAMES_DATA.slice(0, 3).map(game => (
-              <div key={game.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow group">
-                <div className={`${game.heroBg} h-36 flex items-center justify-center text-6xl`}>{game.emoji}</div>
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-slate-900">{game.title}</h3>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${game.diffColor}`}>{game.difficulty}</span>
-                  </div>
-                  <p className="text-slate-500 text-sm mb-4">{game.desc}</p>
-                  <button onClick={() => nav('student_register')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
-                    <Play className="w-4 h-4 fill-white" /> Play Now
-                  </button>
+
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border-2 border-yellow-200 shadow-sm mb-6">
+                <span className="text-lg">🌟</span>
+                <span className="text-xs font-black text-orange-500 uppercase tracking-wide">
+                  Welcome to EduLanka
+                </span>
+              </div>
+
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.02] tracking-tight">
+
+                <span className="text-slate-800">
+                  Learn.
+                </span>
+
+                <br />
+
+                <span className="text-blue-500">
+                  Play.
+                </span>
+
+                <span className="text-yellow-500">
+                  {' '}Grow!
+                </span>
+
+                <span className="text-pink-400">
+                  {' '}★
+                </span>
+              </h1>
+
+              <p className="mt-7 text-lg md:text-xl text-slate-600 leading-relaxed max-w-xl">
+                A fun and interactive learning space made especially for
+                Sri Lankan primary school children.
+              </p>
+
+              <p className="mt-3 text-sm md:text-base text-slate-500 max-w-lg">
+                Learn Mathematics, Sinhala, English and General Knowledge
+                through colourful lessons, exciting games and fun quizzes.
+              </p>
+
+              {/* BUTTONS */}
+              <div className="flex flex-wrap gap-4 mt-8">
+
+                <button
+                  onClick={startLearning}
+                  className="group flex items-center gap-3 px-7 py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-black shadow-xl shadow-blue-200 hover:-translate-y-1 transition-all"
+                >
+                  <span className="text-xl">🚀</span>
+                  Start Learning
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <button
+                  onClick={() => scrollTo('subjects')}
+                  className="flex items-center gap-3 px-7 py-4 rounded-2xl bg-white border-2 border-yellow-200 hover:border-yellow-300 text-slate-700 font-black shadow-sm hover:-translate-y-1 transition-all"
+                >
+                  <span className="text-xl">📚</span>
+                  Explore Subjects
+                </button>
+
+              </div>
+
+              {/* MINI STATS */}
+              <div className="flex flex-wrap gap-3 mt-8">
+
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl shadow-sm border border-blue-100">
+                  <span>👩‍🎓</span>
+                  <span className="text-sm font-black text-slate-700">
+                    12K+ Learners
+                  </span>
                 </div>
+
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl shadow-sm border border-yellow-100">
+                  <span>🏆</span>
+                  <span className="text-sm font-black text-slate-700">
+                    Fun Activities
+                  </span>
+                </div>
+
               </div>
-            ))}
+            </div>
+
+            {/* RIGHT ILLUSTRATION AREA */}
+            <div className="relative">
+
+              <div className="relative max-w-xl mx-auto">
+
+                {/* MAIN CARD */}
+                <div className="relative bg-white rounded-[2.5rem] border-4 border-white shadow-2xl p-6 md:p-8">
+
+                  {/* TOP */}
+                  <div className="flex items-center justify-between mb-6">
+
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        My Learning Space
+                      </p>
+
+                      <h3 className="text-2xl font-black text-slate-800 mt-1">
+                        Hello, Learner! 👋
+                      </h3>
+                    </div>
+
+                    <div className="w-12 h-12 rounded-2xl bg-yellow-100 flex items-center justify-center text-2xl">
+                      😊
+                    </div>
+                  </div>
+
+                  {/* PROGRESS */}
+                  <div className="rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 p-5 mb-5">
+
+                    <div className="flex items-center justify-between mb-3">
+
+                      <div className="flex items-center gap-3">
+
+                        <div className="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center">
+                          <BarChart className="w-6 h-6 text-white" />
+                        </div>
+
+                        <div>
+                          <p className="font-black text-slate-800">
+                            My Progress
+                          </p>
+
+                          <p className="text-xs text-slate-400">
+                            Keep learning!
+                          </p>
+                        </div>
+
+                      </div>
+
+                      <span className="text-xl font-black text-blue-500">
+                        78%
+                      </span>
+
+                    </div>
+
+                    <div className="h-3 bg-white rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full"
+                        style={{ width: '78%' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* SUBJECT CARDS */}
+                  <div className="grid grid-cols-2 gap-3">
+
+                    <div className="p-4 rounded-2xl bg-orange-50 border-2 border-orange-100 hover:scale-[1.02] transition">
+                      <div className="text-3xl mb-3">🔢</div>
+                      <p className="font-black text-orange-700">
+                        Mathematics
+                      </p>
+                      <p className="text-xs text-orange-400 mt-1">
+                        Learn & practise
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-purple-50 border-2 border-purple-100 hover:scale-[1.02] transition">
+                      <div className="text-3xl mb-3">📖</div>
+                      <p className="font-black text-purple-700">
+                        Sinhala
+                      </p>
+                      <p className="text-xs text-purple-400 mt-1">
+                        Read & learn
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-blue-50 border-2 border-blue-100 hover:scale-[1.02] transition">
+                      <div className="text-3xl mb-3">🔤</div>
+                      <p className="font-black text-blue-700">
+                        English
+                      </p>
+                      <p className="text-xs text-blue-400 mt-1">
+                        Words & letters
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-green-50 border-2 border-green-100 hover:scale-[1.02] transition">
+                      <div className="text-3xl mb-3">🌍</div>
+                      <p className="font-black text-green-700">
+                        General Knowledge
+                      </p>
+                      <p className="text-xs text-green-400 mt-1">
+                        Discover more
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* FLOATING BADGE */}
+                <div className="absolute -top-5 -right-3 md:-right-7 bg-white rounded-2xl shadow-xl border-2 border-yellow-100 px-4 py-3 flex items-center gap-3 rotate-3">
+                  <div className="text-3xl">🏆</div>
+
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">
+                      Achievement
+                    </p>
+
+                    <p className="text-sm font-black text-yellow-600">
+                      Quiz Master!
+                    </p>
+                  </div>
+                </div>
+
+                {/* FLOATING STREAK */}
+                <div className="absolute -bottom-5 -left-3 md:-left-7 bg-white rounded-2xl shadow-xl border-2 border-pink-100 px-4 py-3 flex items-center gap-3 -rotate-2">
+                  <div className="text-3xl">🔥</div>
+
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">
+                      Learning Streak
+                    </p>
+
+                    <p className="text-sm font-black text-pink-500">
+                      7 Days!
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/* ── Benefits ── */}
-      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 py-16">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3 text-center">Why EduLanka? ✨</h2>
-          <p className="text-blue-200 text-center mb-12">Built specifically for Sri Lankan primary school children</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* ================= SUBJECTS ================= */}
+      <section
+        id="subjects"
+        className="py-20 md:py-24 bg-white"
+      >
+
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+
+          <div className="text-center max-w-2xl mx-auto mb-12">
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-50 text-yellow-600 font-black text-sm mb-4">
+              📚 Explore & Learn
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-black text-slate-800">
+              What do you want to learn?
+            </h2>
+
+            <p className="text-slate-500 mt-4">
+              Choose a subject and start your learning adventure!
+            </p>
+
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            {SUBJECTS_DATA.map((subj, index) => {
+
+              const icons = [
+                <span className="text-4xl">🔢</span>,
+                <span className="text-4xl">📖</span>,
+                <span className="text-4xl">🔤</span>,
+                <span className="text-4xl">🌍</span>,
+              ];
+
+              const backgrounds = [
+                'bg-orange-50 border-orange-200 hover:border-orange-400',
+                'bg-purple-50 border-purple-200 hover:border-purple-400',
+                'bg-blue-50 border-blue-200 hover:border-blue-400',
+                'bg-green-50 border-green-200 hover:border-green-400',
+              ];
+
+              const titleColors = [
+                'text-orange-600',
+                'text-purple-600',
+                'text-blue-600',
+                'text-green-600',
+              ];
+
+              return (
+                <button
+                  key={subj.id}
+                  onClick={startLearning}
+                  className={`group text-left p-6 rounded-[2rem] border-2 ${backgrounds[index]} hover:-translate-y-2 hover:shadow-xl transition-all duration-300`}
+                >
+
+                  <div className="flex items-start justify-between">
+
+                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                      {icons[index]}
+                    </div>
+
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center group-hover:translate-x-1 transition">
+                      <ArrowRight className="w-5 h-5 text-slate-400" />
+                    </div>
+
+                  </div>
+
+                  <h3 className={`text-xl font-black mt-6 ${titleColors[index]}`}>
+                    {t(subj.nameKey)}
+                  </h3>
+
+                  <p className="text-sm text-slate-500 mt-2">
+                    {subj.lessonCount} fun lessons
+                  </p>
+
+                  <div className="flex items-center gap-2 mt-5 text-xs font-bold text-slate-500">
+                    <span>✨</span>
+                    Learn something new
+                  </div>
+
+                </button>
+              );
+            })}
+
+          </div>
+        </div>
+      </section>
+
+      {/* ================= GAMES ================= */}
+      <section
+        id="games"
+        className="py-20 md:py-24 bg-gradient-to-br from-purple-50 via-pink-50 to-yellow-50"
+      >
+
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+
+          <div className="text-center max-w-2xl mx-auto mb-12">
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 text-purple-600 font-black text-sm mb-4">
+              🎮 Fun Zone
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-black text-slate-800">
+              Learn while you play!
+            </h2>
+
+            <p className="text-slate-500 mt-4">
+              Challenge yourself with fun educational games.
+            </p>
+
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+
+            {GAMES_DATA.slice(0, 3).map((game, index) => {
+
+              const styles = [
+                {
+                  bg: 'bg-orange-100',
+                  border: 'border-orange-200',
+                  icon: '🧮',
+                  color: 'text-orange-600',
+                },
+                {
+                  bg: 'bg-purple-100',
+                  border: 'border-purple-200',
+                  icon: '🧩',
+                  color: 'text-purple-600',
+                },
+                {
+                  bg: 'bg-blue-100',
+                  border: 'border-blue-200',
+                  icon: '🔤',
+                  color: 'text-blue-600',
+                },
+              ];
+
+              const style = styles[index];
+
+              return (
+                <div
+                  key={game.id}
+                  className={`bg-white rounded-[2rem] border-2 ${style.border} overflow-hidden hover:-translate-y-2 hover:shadow-xl transition-all duration-300`}
+                >
+
+                  <div className={`${style.bg} h-44 flex items-center justify-center relative overflow-hidden`}>
+
+                    <div className="absolute top-5 left-6 text-2xl opacity-70">
+                      ✦
+                    </div>
+
+                    <div className="absolute bottom-5 right-7 text-2xl opacity-70">
+                      ★
+                    </div>
+
+                    <div className="w-24 h-24 rounded-3xl bg-white shadow-lg flex items-center justify-center text-5xl rotate-[-4deg]">
+                      {style.icon}
+                    </div>
+
+                  </div>
+
+                  <div className="p-6">
+
+                    <div className="flex items-start justify-between gap-3">
+
+                      <div>
+                        <h3 className={`text-xl font-black ${style.color}`}>
+                          {game.title}
+                        </h3>
+
+                        <p className="text-sm text-slate-500 mt-2">
+                          {game.desc}
+                        </p>
+                      </div>
+
+                      <span className="px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black">
+                        FUN
+                      </span>
+
+                    </div>
+
+                    <button
+                      onClick={startLearning}
+                      className={`w-full mt-6 py-3.5 rounded-xl ${style.bg} ${style.color} font-black hover:scale-[1.02] transition`}
+                    >
+                      🎮 Play Now
+                    </button>
+
+                  </div>
+                </div>
+              );
+            })}
+
+          </div>
+        </div>
+      </section>
+
+      {/* ================= QUIZ ================= */}
+      <section
+        id="quiz"
+        className="py-20 md:py-24 bg-white"
+      >
+
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
+
+          <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-[2.5rem] p-8 md:p-12 text-white relative overflow-hidden">
+
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full" />
+            <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full" />
+
+            <div className="relative grid md:grid-cols-2 gap-10 items-center">
+
+              <div>
+
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 mb-5">
+                  🏆 Challenge Yourself
+                </div>
+
+                <h2 className="text-4xl md:text-5xl font-black">
+                  Ready for a quiz?
+                </h2>
+
+                <p className="mt-4 text-white/80 leading-relaxed">
+                  Test what you have learned and earn achievements along
+                  your learning journey!
+                </p>
+
+                <button
+                  onClick={startLearning}
+                  className="mt-7 px-6 py-3.5 rounded-xl bg-white text-blue-600 font-black hover:scale-105 transition shadow-lg"
+                >
+                  🚀 Take a Quiz
+                </button>
+
+              </div>
+
+              <div className="flex justify-center">
+
+                <div className="w-48 h-48 rounded-full bg-white/15 border-4 border-white/20 flex items-center justify-center">
+
+                  <div className="w-32 h-32 rounded-[2rem] bg-white flex items-center justify-center shadow-xl rotate-3">
+                    <span className="text-7xl">🧠</span>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= FEATURES ================= */}
+      <section
+        id="about"
+        className="py-20 md:py-24 bg-[#FFF9E8]"
+      >
+
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+
+          <div className="text-center mb-12">
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 font-black text-sm mb-4">
+              💡 Why EduLanka?
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-black text-slate-800">
+              Learning made fun & easy
+            </h2>
+
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
             {[
-              { emoji: '🆓', title: '100% Free', desc: 'No subscriptions. No hidden fees. Ever.' },
-              { emoji: '🌐', title: '3 Languages', desc: 'English, Sinhala and Tamil support.' },
-              { emoji: '🎮', title: 'Gamified', desc: 'Earn stars, badges and rewards for learning.' },
-              { emoji: '📱', title: 'Works Everywhere', desc: 'Desktop, tablet, mobile — any device.' },
-            ].map((b, i) => (
-              <div key={i} className="bg-white/10 border border-white/20 rounded-2xl p-5 text-center">
-                <span className="text-4xl mb-3 block">{b.emoji}</span>
-                <h3 className="font-extrabold text-white mb-1">{b.title}</h3>
-                <p className="text-blue-200 text-sm">{b.desc}</p>
+              {
+                icon: '📚',
+                title: 'Easy Lessons',
+                text: 'Simple learning content made for young students.',
+                bg: 'bg-blue-50',
+                border: 'border-blue-200',
+                color: 'text-blue-600',
+              },
+              {
+                icon: '🎮',
+                title: 'Fun Games',
+                text: 'Learn important concepts while playing.',
+                bg: 'bg-purple-50',
+                border: 'border-purple-200',
+                color: 'text-purple-600',
+              },
+              {
+                icon: '🧠',
+                title: 'Smart Quizzes',
+                text: 'Test your knowledge and improve every day.',
+                bg: 'bg-green-50',
+                border: 'border-green-200',
+                color: 'text-green-600',
+              },
+              {
+                icon: '🏆',
+                title: 'Earn Badges',
+                text: 'Celebrate your achievements and progress.',
+                bg: 'bg-yellow-50',
+                border: 'border-yellow-200',
+                color: 'text-yellow-600',
+              },
+            ].map(item => (
+
+              <div
+                key={item.title}
+                className={`p-6 rounded-[2rem] ${item.bg} border-2 ${item.border} hover:-translate-y-2 transition-all`}
+              >
+
+                <div className="text-5xl mb-5">
+                  {item.icon}
+                </div>
+
+                <h3 className={`text-lg font-black ${item.color}`}>
+                  {item.title}
+                </h3>
+
+                <p className="text-sm text-slate-500 leading-relaxed mt-2">
+                  {item.text}
+                </p>
+
               </div>
+
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Unified Login ── */}
-      <section id="unified-login" className="py-16">
-        <div className="max-w-md mx-auto px-4 md:px-8">
-          <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-xl border border-slate-100">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-1">{t('login')}</h2>
-            <p className="text-slate-500 text-sm mb-8">Sign in to continue to your dashboard.</p>
-            <form onSubmit={login.handleSubmit}>
-              <div className="space-y-4 mb-6">
-                <FormField label="Email" type="email" placeholder="you@school.lk" icon={<Mail />} value={login.email} onChange={login.handleEmailChange} />
-                <FormField label="Password" type="password" placeholder="••••••••" icon={<Lock />} value={login.password} onChange={login.handlePasswordChange} />
+      {/* ================= CTA ================= */}
+      <section className="py-20 bg-white">
+
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+
+          <div className="rounded-[2.5rem] bg-gradient-to-br from-yellow-300 via-orange-300 to-pink-300 p-8 md:p-14 text-center relative overflow-hidden">
+
+            <div className="absolute top-5 left-10 text-3xl">
+              ⭐
+            </div>
+
+            <div className="absolute bottom-5 right-10 text-3xl">
+              🌈
+            </div>
+
+            <div className="relative">
+
+              <div className="text-6xl mb-5">
+                🚀
               </div>
-              {login.error && <p role="alert" className="mb-4 text-sm font-semibold text-red-600">{login.error}</p>}
-              <button type="submit" disabled={login.isLoading} className="w-full btn-chunky bg-blue-600 shadow-[0_5px_0_#1D4ED8] hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold py-4 rounded-2xl text-base active:translate-y-1 active:shadow-none transition-all">
-                {login.isLoading ? 'Signing in...' : t('login')}
+
+              <h2 className="text-4xl md:text-5xl font-black text-slate-800">
+                Let's start learning!
+              </h2>
+
+              <p className="mt-4 text-slate-700 max-w-xl mx-auto">
+                Join EduLanka and discover a fun new way to learn every day.
+              </p>
+
+              <button
+                onClick={startLearning}
+                className="mt-8 px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white font-black shadow-xl hover:-translate-y-1 transition-all"
+              >
+                🎓 Create Free Account
               </button>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================= LOGIN ================= */}
+      <section
+        id="login"
+        className="py-20 bg-slate-50"
+      >
+
+        <div className="max-w-md mx-auto px-5">
+
+          <div className="text-center mb-8">
+
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-100 flex items-center justify-center text-3xl mb-4">
+              🔐
+            </div>
+
+            <h2 className="text-3xl font-black text-slate-800">
+              Welcome Back! 👋
+            </h2>
+
+            <p className="text-slate-500 mt-2">
+              Continue your learning adventure.
+            </p>
+
+          </div>
+
+          <div className="bg-white rounded-[2rem] border-2 border-blue-100 p-7 shadow-xl">
+
+            <form onSubmit={login.handleSubmit}>
+
+              <div className="space-y-4 mb-6">
+
+                <FormField
+                  label="Email"
+                  type="email"
+                  placeholder="you@school.lk"
+                  icon={<Mail />}
+                  value={login.email}
+                  onChange={login.handleEmailChange}
+                />
+
+                <FormField
+                  label="Password"
+                  type="password"
+                  placeholder="••••••••"
+                  icon={<Lock />}
+                  value={login.password}
+                  onChange={login.handlePasswordChange}
+                />
+
+              </div>
+
+              {login.error && (
+                <p
+                  role="alert"
+                  className="mb-4 text-sm font-semibold text-red-600"
+                >
+                  {login.error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={login.isLoading}
+                className="w-full py-4 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white font-black transition"
+              >
+                {login.isLoading ? 'Signing in...' : '🔐 Login'}
+              </button>
+
             </form>
+
+            <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+
+              <p className="text-sm text-slate-500">
+                Don't have an account?
+              </p>
+
+              <button
+                onClick={startLearning}
+                className="mt-2 font-black text-blue-500 hover:underline"
+              >
+                Create an account 🚀
+              </button>
+
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="bg-slate-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-3">
-                <ElephantMascot size={32} />
-                <span className="font-extrabold text-lg">{t('appName')}</span>
+      {/* ================= FOOTER ================= */}
+      <footer className="bg-slate-800 text-white">
+
+        <div className="max-w-7xl mx-auto px-5 md:px-8 py-12">
+
+          <div className="grid md:grid-cols-4 gap-10">
+
+            <div>
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-11 h-11 rounded-xl bg-yellow-400 flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-slate-800" />
+                </div>
+
+                <div>
+                  <p className="text-xl font-black">
+                    Edu<span className="text-blue-400">Lanka</span>
+                  </p>
+                  <p className="text-[9px] text-slate-400 uppercase tracking-wider">
+                    Learn • Play • Grow
+                  </p>
+                </div>
+
               </div>
-              <p className="text-slate-400 text-sm leading-relaxed">Free interactive learning for every Sri Lankan primary school child.</p>
+
+              <p className="text-sm text-slate-400 mt-5 leading-relaxed">
+                Making learning fun, simple and accessible for Sri Lankan
+                primary school children.
+              </p>
+
             </div>
-            {[
-              { title: 'Learn', links: ['Mathematics', 'Sinhala Letters', 'English', 'General Knowledge'] },
-              { title: 'Platform', links: ['Games', 'Quizzes', 'Progress Tracking', 'Achievements'] },
-              { title: 'Portals', links: ['Student Login', 'Teacher Portal', 'Admin Console', 'Register Free'] },
-            ].map(col => (
-              <div key={col.title}>
-                <h4 className="font-bold text-slate-300 text-sm mb-3">{col.title}</h4>
-                <ul className="space-y-2">
-                  {col.links.map(l => <li key={l}><a href="#" className="text-slate-400 text-sm hover:text-white transition-colors">{l}</a></li>)}
-                </ul>
+
+            <div>
+
+              <h4 className="font-black mb-4">
+                📚 Subjects
+              </h4>
+
+              <div className="space-y-2 text-sm text-slate-400">
+                <p>Mathematics</p>
+                <p>Sinhala</p>
+                <p>English</p>
+                <p>General Knowledge</p>
               </div>
-            ))}
-          </div>
-          <div className="border-t border-slate-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
-            <p className="text-slate-500 text-sm">© 2026 EduLanka. Free for all Sri Lankan children. 🇱🇰</p>
-            <div className="flex items-center gap-4 text-slate-500 text-sm">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
+
             </div>
+
+            <div>
+
+              <h4 className="font-black mb-4">
+                🎮 Explore
+              </h4>
+
+              <div className="space-y-2 text-sm text-slate-400">
+
+                <button
+                  onClick={() => scrollTo('games')}
+                  className="block hover:text-white"
+                >
+                  Games
+                </button>
+
+                <button
+                  onClick={() => scrollTo('quiz')}
+                  className="block hover:text-white"
+                >
+                  Quizzes
+                </button>
+
+                <button
+                  onClick={startLearning}
+                  className="block hover:text-white"
+                >
+                  Register
+                </button>
+
+              </div>
+
+            </div>
+
+            <div>
+
+              <h4 className="font-black mb-4">
+                🌟 EduLanka
+              </h4>
+
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Learn something new every day and enjoy your learning journey!
+              </p>
+
+              <div className="flex gap-2 mt-5 text-2xl">
+                ⭐ 🚀 🏆
+              </div>
+
+            </div>
+
           </div>
+
+          <div className="border-t border-white/10 mt-10 pt-6 text-center">
+
+            <p className="text-xs text-slate-500">
+              © 2026 EduLanka • Learn • Play • Grow 🌈
+            </p>
+
+          </div>
+
         </div>
       </footer>
+
     </div>
   );
 }
