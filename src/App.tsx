@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
+import { api, type UserProfile } from './lib/api';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   LayoutDashboard, Users, BookOpen, GraduationCap, Settings, Search, Plus,
@@ -102,10 +103,11 @@ function useT(lang: Lang) {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen =
   | 'landing'
+  | 'welcome'
   | 'student_login' | 'student_register' | 'student_forgot'
   | 'student_dashboard' | 'student_subjects' | 'student_grade'
   | 'student_lesson_list' | 'student_lesson'
-  | 'student_games' | 'student_game_play'
+  | 'student_games'
   | 'student_quiz_select' | 'student_quiz' | 'student_quiz_result'
   | 'student_progress' | 'student_profile'
   | 'parent_login' | 'parent_dashboard' | 'parent_student'
@@ -144,11 +146,72 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#FDFDF8] font-sans">
       {screen === 'landing' && <LandingPage nav={nav} lang={lang} setLang={setLang} t={t} />}
+      {screen === 'welcome' && <WelcomePage nav={nav} />}
       {screen === 'student_login' && <StudentLogin nav={nav} t={t} />}
       {screen === 'student_register' && <StudentRegister nav={nav} t={t} />}
       {screen === 'student_forgot' && <ForgotPassword nav={nav} />}
       {screen === 'parent_login' && <ParentLogin nav={nav} />}
       {screen === 'admin_login' && <AdminLogin nav={nav} />}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// WELCOME PAGE
+// ────────────────────────────────────────────────────────────────────────
+function WelcomePage({ nav }: { nav: (s: Screen) => void }) {
+  const features = [
+    { icon: BookOpen, title: 'Learn', desc: 'Maths, Sinhala and English lessons for your grade.', bg: 'bg-blue-100 text-blue-700' },
+    { icon: Trophy, title: 'Take quizzes', desc: 'Test what you know and earn points as you go.', bg: 'bg-amber-100 text-amber-700' },
+    { icon: Zap, title: 'Play games', desc: 'Fun puzzles that make practice feel like play.', bg: 'bg-green-100 text-green-700' },
+    { icon: TrendingUp, title: 'Track progress', desc: 'See how far you have come, one step at a time.', bg: 'bg-purple-100 text-purple-700' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-[#FDFDF8] to-[#FDFDF8] flex flex-col">
+      <header className="max-w-6xl w-full mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <ElephantMascot size={34} />
+          <span className="font-extrabold text-xl text-blue-900">EduLanka</span>
+        </div>
+        <button onClick={() => nav('landing')} className="text-sm font-bold text-slate-500 hover:text-blue-700 transition-colors">
+          ← Back to home
+        </button>
+      </header>
+
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 py-10 md:py-16">
+        <section className="text-center max-w-2xl mx-auto">
+          <div className="inline-block mb-6">
+            <ElephantMascot size={120} />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">Welcome to EduLanka! 🎉</h1>
+          <p className="text-slate-600 text-lg leading-relaxed mb-8">
+            Learn, play and grow every day. Sign in to pick up where you left off, or create a free student account to start.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onClick={() => nav('student_register')} className="btn-chunky bg-yellow-400 shadow-[0_6px_0_#D97706] hover:bg-yellow-500 text-yellow-900 font-extrabold px-8 py-4 rounded-2xl text-base active:translate-y-1.5 active:shadow-none transition-all">
+              Register
+            </button>
+            <button onClick={() => nav('student_login')} className="bg-white border-2 border-blue-200 hover:border-blue-400 text-blue-700 font-extrabold px-8 py-4 rounded-2xl text-base transition-colors">
+              Login
+            </button>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-16">
+          {features.map(f => (
+            <div key={f.title} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-lg transition-shadow">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${f.bg}`}>
+                <f.icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-extrabold text-slate-900 text-lg mb-1">{f.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+
+      <footer className="text-center text-xs text-slate-400 py-6">© EduLanka · Web Architecture Group Project</footer>
     </div>
   );
 }
@@ -183,6 +246,7 @@ function LandingPage({ nav, lang, setLang, t }: { nav: (s: Screen) => void; lang
 
           {/* Right side */}
           <div className="ml-auto flex items-center gap-3">
+            <button onClick={() => nav('welcome')} className="hidden md:block px-3 py-2 rounded-lg text-sm font-bold text-blue-700 hover:bg-blue-50 transition-colors">Welcome</button>
             {/* Language selector */}
             <div className="relative hidden md:block">
               <select
@@ -425,10 +489,10 @@ const SUBJECTS_DATA = [
 ];
 
 const GAMES_DATA = [
-  { id: 'g1', title: 'Number Quest', desc: 'Solve fun maths puzzles!', emoji: '🧮', heroBg: 'bg-orange-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
-  { id: 'g2', title: 'Sinhala Letter Match', desc: 'Match Sinhala letters to pictures!', emoji: '📝', heroBg: 'bg-purple-100', difficulty: 'Medium', diffColor: 'bg-yellow-100 text-yellow-700' },
-  { id: 'g3', title: 'Alphabet Adventure', desc: 'Journey through the English alphabet!', emoji: '🔤', heroBg: 'bg-cyan-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
-  { id: 'g4', title: 'Island Explorer', desc: 'Discover facts about Sri Lanka!', emoji: '🌍', heroBg: 'bg-green-100', difficulty: 'Hard', diffColor: 'bg-red-100 text-red-700' },
+  { id: 'g1', file: 'number-quest.html', title: 'Number Quest', desc: 'Solve fun maths puzzles!', emoji: '🧮', heroBg: 'bg-orange-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
+  { id: 'g2', file: 'sinhala-letter-match.html', title: 'Sinhala Letter Match', desc: 'Match Sinhala letters to pictures!', emoji: '📝', heroBg: 'bg-purple-100', difficulty: 'Medium', diffColor: 'bg-yellow-100 text-yellow-700' },
+  { id: 'g3', file: 'alphabet-adventure.html', title: 'Alphabet Adventure', desc: 'Journey through the English alphabet!', emoji: '🔤', heroBg: 'bg-cyan-100', difficulty: 'Easy', diffColor: 'bg-green-100 text-green-700' },
+  { id: 'g4', file: 'island-explorer.html', title: 'Island Explorer', desc: 'Discover facts about Sri Lanka!', emoji: '🌍', heroBg: 'bg-green-100', difficulty: 'Hard', diffColor: 'bg-red-100 text-red-700' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -763,7 +827,6 @@ function StudentShell({ screen, nav, lang, setLang, t }: { screen: Screen; nav: 
         {screen === 'student_lesson_list' && <LessonList nav={nav} />}
         {screen === 'student_lesson' && <LessonView nav={nav} onStartQuiz={subject => { setActiveQuizSubject(subject); nav('student_quiz'); }} />}
         {screen === 'student_games' && <GamesPage nav={nav} t={t} />}
-        {screen === 'student_game_play' && <GamePlay nav={nav} />}
         {screen === 'student_quiz_select' && <QuizSelect nav={nav} t={t} onStartQuiz={subject => { setActiveQuizSubject(subject); nav('student_quiz'); }} />}
         {screen === 'student_quiz' && <QuizPlay subject={activeQuizSubject} nav={nav} onFinish={score => { setQuizResult({ score, total: getQuizQuestions(activeQuizSubject).length }); nav('student_quiz_result'); }} />}
         {screen === 'student_quiz_result' && <QuizResult nav={nav} score={quizResult.score} total={quizResult.total} />}
@@ -1051,72 +1114,13 @@ function GamesPage({ nav, t }: { nav: (s: Screen) => void; t: (k: string) => str
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${game.diffColor}`}>{game.difficulty}</span>
               </div>
               <p className="text-slate-500 text-sm mb-4">{game.desc}</p>
-              <button onClick={() => nav('student_game_play')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+              <button onClick={() => window.location.assign(`/games/${game.file}`)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
                 <Play className="w-4 h-4 fill-white" /> Play Now
               </button>
             </div>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function GamePlay({ nav }: { nav: (s: Screen) => void }) {
-  const [score, setScore] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const options = [7, 8, 9, 10];
-
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => nav('student_games')} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200">
-          <X className="w-5 h-5 text-slate-600" />
-        </button>
-        <div className="flex-1">
-          <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
-            <span>Number Quest</span>
-            <span className="text-amber-600">Score: {score}</span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-3">
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 h-3 rounded-full" style={{ width: '40%' }} />
-          </div>
-        </div>
-        <div className="flex items-center gap-1 bg-orange-50 rounded-full px-3 py-1.5 border border-orange-200">
-          <Clock className="w-3.5 h-3.5 text-orange-500" />
-          <span className="font-extrabold text-orange-700 text-sm">0:45</span>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-100 text-center mb-6">
-        <p className="text-slate-500 text-sm font-bold uppercase tracking-wide mb-4">What is the answer?</p>
-        <p className="text-5xl font-extrabold text-slate-900">3 + 4 = ?</p>
-        <div className="flex justify-center gap-4 mt-4">
-          {['🍎🍎🍎', '🍎🍎🍎🍎'].map((s, i) => <span key={i} className="text-2xl">{s}</span>)}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {options.map((opt, i) => {
-          const colors = ['bg-orange-400 shadow-[0_5px_0_#EA580C]', 'bg-green-400 shadow-[0_5px_0_#16A34A]', 'bg-blue-400 shadow-[0_5px_0_#0369A1]', 'bg-purple-400 shadow-[0_5px_0_#9333EA]'];
-          const isSelected = selected === i;
-          return (
-            <button
-              key={i}
-              onClick={() => { setSelected(i); if (opt === 7) setScore(s => s + 10); }}
-              className={`${colors[i]} ${isSelected ? 'ring-4 ring-white/60' : ''} btn-chunky rounded-2xl p-6 text-3xl font-extrabold text-white hover:brightness-105 transition-all active:translate-y-1 active:shadow-none`}
-            >
-              {opt}
-            </button>
-          );
-        })}
-      </div>
-
-      {selected !== null && (
-        <div className={`mt-4 p-4 rounded-2xl text-center font-extrabold text-lg ${options[selected] === 7 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {options[selected] === 7 ? '🎉 Correct! +10 points' : '❌ Try again! The answer is 7'}
-        </div>
-      )}
     </div>
   );
 }
@@ -2012,20 +2016,55 @@ function AdminDashboard({ nav }: { nav: (s: Screen) => void }) {
   );
 }
 
-const ALL_USERS = [
-  { name: 'Chamara Perera', email: 'chamara@school.lk', role: 'Student', grade: 'Grade 3', status: 'Active', joined: 'Sep 1, 2026' },
-  { name: 'Dilani Silva', email: 'dilani@school.lk', role: 'Student', grade: 'Grade 3', status: 'Active', joined: 'Sep 2, 2026' },
-  { name: 'Ravi Nandana', email: 'ravi@school.lk', role: 'Student', grade: 'Grade 3', status: 'Active', joined: 'Sep 3, 2026' },
-  { name: 'Fatima Hussain', email: 'fatima@school.lk', role: 'Student', grade: 'Grade 3', status: 'Inactive', joined: 'Sep 5, 2026' },
-  { name: 'Nimal Kumara', email: 'nimal@school.lk', role: 'Teacher', grade: '—', status: 'Active', joined: 'Aug 15, 2026' },
-  { name: 'Priya Jayasinghe', email: 'priya@school.lk', role: 'Teacher', grade: '—', status: 'Active', joined: 'Aug 20, 2026' },
-  { name: 'System Admin', email: 'admin@edulanka.lk', role: 'Admin', grade: '—', status: 'Active', joined: 'Jan 1, 2026' },
-];
+type AdminUserRow = {
+  name: string;
+  email: string;
+  role: string;
+  grade: string;
+  status: string;
+  joined: string;
+};
+
+function formatJoinedDate(value: unknown): string {
+  // Firestore timestamps arrive as JSON objects like { _seconds, _nanoseconds }; ISO strings are also possible.
+  const seconds = (value as { _seconds?: number } | null)?._seconds;
+  const date = typeof seconds === 'number'
+    ? new Date(seconds * 1000)
+    : typeof value === 'string' ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '—';
+}
+
+function toAdminUserRow(user: UserProfile): AdminUserRow {
+  const role = String(user.role || 'student');
+  return {
+    name: user.displayName?.trim() || user.email || 'Unnamed user',
+    email: user.email || '—',
+    role: role.charAt(0).toUpperCase() + role.slice(1),
+    grade: user.grade || '—',
+    status: 'Active',
+    joined: formatJoinedDate(user.createdAt),
+  };
+}
 
 function AdminUsers() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'All' | 'Student' | 'Teacher' | 'Admin'>('All');
-  const filtered = ALL_USERS.filter(u =>
+  const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.listUsers()
+      .then(res => { if (!cancelled) setUsers(res.users.map(toAdminUserRow)); })
+      .catch(error => { if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Unable to load users.'); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = users.filter(u =>
     (filter === 'All' || u.role === filter) &&
     u.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -2067,6 +2106,13 @@ function AdminUsers() {
               <th className="px-5 py-4" />
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
+              {(isLoading || loadError || (!isLoading && filtered.length === 0)) && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400">
+                    {isLoading ? 'Loading users...' : loadError ? loadError : 'No users found.'}
+                  </td>
+                </tr>
+              )}
               {filtered.map((u, i) => (
                 <tr key={i} className="hover:bg-slate-50 group">
                   <td className="px-6 py-4">
@@ -2346,21 +2392,18 @@ function useFirebaseLogin(nav: (screen: Screen) => void) {
 
     setIsLoading(true);
     try {
-      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      let profileSnapshot;
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+
+      // The role is decided by the backend (verified token claim), not by the browser.
+      let me: UserProfile;
       try {
-        profileSnapshot = await getDoc(doc(db, 'users', credential.user.uid));
+        me = await api.getMe();
       } catch {
-        setError('Unable to load your account role. Please try again.');
+        setError('Unable to load your account role. Please check your connection and try again.');
         return;
       }
 
-      if (!profileSnapshot.exists()) {
-        setError('Your account profile was not found. Please contact an administrator.');
-        return;
-      }
-
-      const destination = getDashboardForRole(profileSnapshot.data().role);
+      const destination = getDashboardForRole(me.role);
       if (!destination) {
         setError('Your account role is not recognized. Please contact an administrator.');
         return;
