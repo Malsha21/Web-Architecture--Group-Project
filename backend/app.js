@@ -4,6 +4,8 @@ import express from 'express';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import usersRouter from './routes/users.js';
+import adminRouter from './routes/admin.js';
+import quizzesRouter from './routes/quizzes.js';
 
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:8443')
   .split(',')
@@ -33,6 +35,8 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 app.use('/api/users', usersRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/quizzes', quizzesRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found.' });

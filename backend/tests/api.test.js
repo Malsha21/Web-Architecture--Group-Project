@@ -24,7 +24,7 @@ process.env.RATE_LIMIT_MAX = '1000'; // so the rate limiter never interferes wit
 
 // Import after the settings above (a normal import would run too early)
 const { default: app } = await import('../app.js');
-const { auth } = await import('../firebase-admin.js');
+const { auth, db } = await import('../firebase-admin.js');
 
 // Fake users. The token text decides who is "logged in".
 const FAKE_USERS = {
@@ -80,6 +80,15 @@ describe('401: not signed in', () => {
     assert.equal(body.error, 'Missing Bearer token.');
   });
 
+  it('requires authentication to create quiz questions', async () => {
+    const { status, body } = await request('/api/quizzes', {
+      method: 'POST',
+      body: { question: 'Example?' },
+    });
+    assert.equal(status, 401);
+    assert.equal(body.error, 'Missing Bearer token.');
+  });
+
   it('returns 401 when the Authorization header is not a Bearer token', async () => {
     const { status } = await request('/api/users/me', { token: 'student-token', scheme: 'Basic' });
     assert.equal(status, 401);
@@ -99,6 +108,20 @@ describe('403: signed in but wrong role', () => {
     assert.equal(status, 403);
   });
 
+  it('a student cannot create quiz questions', async () => {
+    const { status } = await request('/api/quizzes', {
+      method: 'POST',
+      token: 'student-token',
+      body: { question: 'Example?' },
+    });
+    assert.equal(status, 403);
+  });
+
+  it('a student cannot access admin metrics', async () => {
+    const { status } = await request('/api/admin/metrics', { token: 'student-token' });
+    assert.equal(status, 403);
+  });
+
   it('a user with no role cannot list users', async () => {
     const { status } = await request('/api/users', { token: 'no-role-token' });
     assert.equal(status, 403);
@@ -115,6 +138,59 @@ describe('403: signed in but wrong role', () => {
 });
 
 describe('admin rules and input checks', () => {
+  it('rejects incomplete quiz questions', async () => {
+    const { status, body } = await request('/api/quizzes', {
+      method: 'POST',
+      token: 'admin-token',
+      body: { subject: 'Mathematics', question: 'Example?' },
+    });
+    assert.equal(status, 400);
+    assert.match(body.error, /grade must be/);
+  });
+
+  it('creates a validated quiz question in Firestore', async (t) => {
+    let savedQuestion;
+    t.mock.method(db, 'collection', (name) => {
+      assert.equal(name, 'quiz_questions');
+      return {
+        add: async (question) => {
+          savedQuestion = question;
+          return { id: 'question-123' };
+        },
+      };
+    });
+
+    const { status, body } = await request('/api/quizzes', {
+      method: 'POST',
+      token: 'admin-token',
+      body: {
+        subject: 'Mathematics',
+        grade: 'Grade 3',
+        language: 'English',
+        difficulty: 'Medium',
+        question: 'What is 5 + 3?',
+        options: ['6', '7', '8', '9'],
+        correct: 2,
+        hint: 'Count on.',
+      },
+    });
+
+    assert.equal(status, 201);
+    assert.equal(body.id, 'question-123');
+    assert.equal(body.correct, 2);
+    assert.equal(savedQuestion.createdBy, 'admin1');
+  });
+
+  it('returns total and enabled account metrics across Firebase Auth pages', async (t) => {
+    t.mock.method(auth, 'listUsers', async (_maxResults, pageToken) => pageToken
+      ? { users: [{ disabled: false }] }
+      : { users: [{ disabled: false }, { disabled: true }], pageToken: 'next-page' });
+
+    const { status, body } = await request('/api/admin/metrics', { token: 'admin-token' });
+    assert.equal(status, 200);
+    assert.deepEqual(body, { users: 3, active: 2 });
+  });
+
   it('an admin cannot remove their own admin role', async () => {
     const { status, body } = await request('/api/users/admin1/role', {
       method: 'PATCH',
