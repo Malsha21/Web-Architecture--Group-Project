@@ -13,6 +13,17 @@ export type UserProfile = {
   createdAt?: unknown;
 };
 
+export type QuizQuestionInput = {
+  subject: string;
+  grade: string;
+  language: 'English' | 'Sinhala' | 'Tamil';
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  question: string;
+  options: string[];
+  correct: number;
+  hint?: string;
+};
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -60,6 +71,14 @@ export const api = {
     }),
 
   listUsers: () => request<{ users: UserProfile[] }>('/users'),
+
+  getAdminMetrics: () => request<{ users: number; active: number }>('/admin/metrics'),
+
+  createQuizQuestion: (body: QuizQuestionInput) =>
+    request<{ id: string } & QuizQuestionInput>('/quizzes', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   setRole: (uid: string, role: UserRole) =>
     request<{ message: string; uid: string; role: string }>(`/users/${uid}/role`, {

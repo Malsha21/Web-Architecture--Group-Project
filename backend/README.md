@@ -137,6 +137,14 @@ Body: `{ "role": "teacher" }`
 - Returns `403` if an admin tries to change their own role to anything other than `admin`.
 - The user must refresh their ID token to receive the new role.
 
+### `POST /api/quizzes`
+
+Admin only. Creates a multiple-choice question in the `quiz_questions` collection.
+
+Required body fields: `subject`, `grade` (`Grade 1` through `Grade 5`), `language` (`English`, `Sinhala`, or `Tamil`), `difficulty` (`Easy`, `Medium`, or `Hard`), `question`, `options` (2 to 6 strings), and `correct` (zero-based index of the correct option). `hint` is optional.
+
+Returns `201` with the new document ID and saved question. The server adds `createdAt` and `createdBy`; invalid payloads return `400`.
+
 ### Errors
 
 | Status | Meaning |

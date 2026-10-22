@@ -2691,6 +2691,27 @@ function AdminShell({ screen, nav }: { screen: Screen; nav: (s: Screen) => void 
 }
 
 function AdminDashboard({ nav }: { nav: (s: Screen) => void }) {
+  const [metrics, setMetrics] = useState({ users: 0, active: 0 });
+  const [metricsError, setMetricsError] = useState('');
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getAdminMetrics()
+      .then(data => {
+        if (!cancelled) setMetrics(data);
+      })
+      .catch(error => {
+        console.error('Failed to load dashboard metrics:', error);
+        if (!cancelled) setMetricsError('Unable to load user metrics.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingMetrics(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -2698,18 +2719,15 @@ function AdminDashboard({ nav }: { nav: (s: Screen) => void }) {
         <p className="text-slate-500">EduLanka system overview — {new Date().toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8 max-w-2xl">
         {[
-          { label: 'Total Students', value: '12,482', icon: <Users className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50', change: '+14%' },
-          { label: 'Parents/Teachers', value: '1,204', icon: <GraduationCap className="w-5 h-5 text-green-600" />, bg: 'bg-green-50', change: '+6%' },
-          { label: 'Active Lessons', value: '482', icon: <BookOpen className="w-5 h-5 text-purple-600" />, bg: 'bg-purple-50', change: '+8%' },
-          { label: 'Quizzes', value: '214', icon: <ClipboardList className="w-5 h-5 text-orange-600" />, bg: 'bg-orange-50', change: '+22%' },
-          { label: 'Content Items', value: '1,820', icon: <FileText className="w-5 h-5 text-pink-600" />, bg: 'bg-pink-50', change: '+4%' },
-        ].map((m, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <div className="flex justify-between items-start mb-3"><p className="text-slate-500 text-xs font-medium">{m.label}</p><div className={`w-8 h-8 rounded-xl ${m.bg} flex items-center justify-center`}>{m.icon}</div></div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-0.5">{m.value}</h2>
-            <p className="text-xs font-semibold text-green-600">{m.change} this month</p>
+          { label: 'Total Users', value: metrics.users, icon: <Users className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50' },
+          { label: 'Active Accounts', value: metrics.active, icon: <CheckCircle className="w-5 h-5 text-green-600" />, bg: 'bg-green-50' },
+        ].map((metric) => (
+          <div key={metric.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="flex justify-between items-start mb-3"><p className="text-slate-500 text-xs font-medium">{metric.label}</p><div className={`w-8 h-8 rounded-xl ${metric.bg} flex items-center justify-center`}>{metric.icon}</div></div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-0.5">{isLoadingMetrics ? '—' : metric.value.toLocaleString()}</h2>
+            <p className="text-xs text-slate-500">{metricsError || (metric.label === 'Active Accounts' ? 'Enabled Firebase accounts' : 'Firebase accounts')}</p>
           </div>
         ))}
       </div>
@@ -2788,6 +2806,7 @@ function AdminDashboard({ nav }: { nav: (s: Screen) => void }) {
 }
 
 type AdminUserRow = {
+  uid: string;
   name: string;
   email: string;
   role: string;
@@ -2810,6 +2829,7 @@ function formatJoinedDate(value: unknown): string {
 function toAdminUserRow(user: UserProfile): AdminUserRow {
   const role = String(user.role || 'student');
   return {
+    uid: user.uid || user.id || '',
     name: user.displayName?.trim() || user.email || 'Unnamed user',
     email: user.email || '—',
     role: role.charAt(0).toUpperCase() + role.slice(1),
@@ -2821,10 +2841,11 @@ function toAdminUserRow(user: UserProfile): AdminUserRow {
 
 function AdminUsers() {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'All' | 'Student' | 'Teacher' | 'Admin'>('All');
+  const [filter, setFilter] = useState<'All' | 'Student' | 'Parent' | 'Teacher' | 'Admin'>('All');
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -2834,6 +2855,22 @@ function AdminUsers() {
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  const handleRoleChange = async (userId: string, newRole: UserProfile['role']) => {
+    try {
+      setUpdatingUserId(userId);
+      await api.setRole(userId, newRole);
+      setUsers(currentUsers => currentUsers.map(user => user.uid === userId
+        ? { ...user, role: newRole.charAt(0).toUpperCase() + newRole.slice(1) }
+        : user));
+      alert('Role updated successfully! The user must log out and log in again for the changes to take effect.');
+    } catch (error) {
+      console.error('Failed to update role:', error);
+      alert('Error updating role. Please try again.');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
 
   const filtered = users.filter(u =>
     (filter === 'All' || u.role === filter) &&
@@ -2859,7 +2896,7 @@ function AdminUsers() {
             <input value={search} onChange={e => setSearch(e.target.value)} type="text" placeholder="Search users..." className="pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm w-56 focus:outline-none focus:border-blue-500" />
           </div>
           <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden">
-            {(['All', 'Student', 'Teacher', 'Admin'] as const).map(f => (
+            {(['All', 'Student', 'Parent', 'Teacher', 'Admin'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 text-sm font-semibold transition-colors ${filter === f ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{f}</button>
             ))}
           </div>
@@ -2893,7 +2930,17 @@ function AdminUsers() {
                     </div>
                   </td>
                   <td className="px-5 py-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.role === 'Admin' ? 'bg-blue-100 text-blue-700' : u.role === 'Teacher' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>{u.role}</span>
+                    <select
+                      aria-label={`Role for ${u.name}`}
+                      value={u.role.toLowerCase()}
+                      disabled={!u.uid || updatingUserId === u.uid}
+                      onChange={event => { void handleRoleChange(u.uid, event.target.value as UserProfile['role']); }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 ${u.role === 'Admin' ? 'bg-blue-100 text-blue-700' : u.role === 'Teacher' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}
+                    >
+                      {(['student', 'parent', 'teacher', 'admin'] as const).map(role => (
+                        <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-5 py-4 text-slate-600 text-sm">{u.grade}</td>
                   <td className="px-5 py-4">
@@ -3029,6 +3076,48 @@ function AdminContent({ nav }: { nav: (s: Screen) => void }) {
 }
 
 function AdminAddQuestion({ nav }: { nav: (s: Screen) => void }) {
+  const [subject, setSubject] = useState('Mathematics');
+  const [grade, setGrade] = useState('Grade 3');
+  const [language, setLanguage] = useState<'English' | 'Sinhala' | 'Tamil'>('English');
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [question, setQuestion] = useState('');
+  const [options, setOptions] = useState(['', '', '', '']);
+  const [correct, setCorrect] = useState(0);
+  const [hint, setHint] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsSaving(true);
+
+    try {
+      const result = await api.createQuizQuestion({
+        subject,
+        grade,
+        language,
+        difficulty,
+        question,
+        options,
+        correct,
+        ...(hint.trim() ? { hint: hint.trim() } : {}),
+      });
+      setSuccess(`Question saved successfully (ID: ${result.id}).`);
+      setQuestion('');
+      setOptions(['', '', '', '']);
+      setCorrect(0);
+      setHint('');
+    } catch (saveError) {
+      console.error('Failed to save quiz question:', saveError);
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save the question. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-5xl mx-auto pb-24">
       <div className="mb-8">
@@ -3043,52 +3132,67 @@ function AdminAddQuestion({ nav }: { nav: (s: Screen) => void }) {
         <p className="text-slate-500">Define a multiple-choice question with localized language settings.</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-          {[['Subject', 'Mathematics'], ['Grade', 'Grade 3'], ['Language', 'English'], ['Difficulty', 'Medium']].map(([lbl, val]) => (
-            <div key={lbl}>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">{lbl}</label>
-              <select className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-white">
-                <option>{val}</option>
-              </select>
-            </div>
-          ))}
+          <div>
+            <label htmlFor="quiz-subject" className="block text-sm font-semibold text-slate-700 mb-2">Subject</label>
+            <select id="quiz-subject" value={subject} onChange={event => setSubject(event.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-white">
+              {['Mathematics', 'English', 'Sinhala', 'Tamil', 'General Knowledge'].map(value => <option key={value}>{value}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="quiz-grade" className="block text-sm font-semibold text-slate-700 mb-2">Grade</label>
+            <select id="quiz-grade" value={grade} onChange={event => setGrade(event.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-white">
+              {[1, 2, 3, 4, 5].map(value => <option key={value}>Grade {value}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="quiz-language" className="block text-sm font-semibold text-slate-700 mb-2">Language</label>
+            <select id="quiz-language" value={language} onChange={event => setLanguage(event.target.value as typeof language)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-white">
+              {(['English', 'Sinhala', 'Tamil'] as const).map(value => <option key={value}>{value}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="quiz-difficulty" className="block text-sm font-semibold text-slate-700 mb-2">Difficulty</label>
+            <select id="quiz-difficulty" value={difficulty} onChange={event => setDifficulty(event.target.value as typeof difficulty)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-white">
+              {(['Easy', 'Medium', 'Hard'] as const).map(value => <option key={value}>{value}</option>)}
+            </select>
+          </div>
         </div>
 
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Question Text</label>
-          <textarea rows={3} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-blue-500 resize-none" placeholder="Type your question here..." defaultValue="What is 5 + 3?" />
+          <label htmlFor="quiz-question" className="block text-sm font-semibold text-slate-700 mb-2">Question Text</label>
+          <textarea id="quiz-question" rows={3} required maxLength={1000} value={question} onChange={event => setQuestion(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-blue-500 resize-none" placeholder="Type your question here..." />
         </div>
 
         <div className="mb-8">
           <label className="block text-sm font-semibold text-slate-700 mb-4">Answer Options <span className="text-slate-400 font-normal">(Select the correct answer)</span></label>
           <div className="space-y-3">
-            {[{ l: 'A', v: '6', correct: false }, { l: 'B', v: '7', correct: false }, { l: 'C', v: '8', correct: true }, { l: 'D', v: '9', correct: false }].map(opt => (
-              <div key={opt.l} className={`flex items-center gap-4 px-4 py-3 rounded-xl border ${opt.correct ? 'border-2 border-blue-500 bg-blue-50/40' : 'border-slate-200'}`}>
-                <input type="radio" name="correct" defaultChecked={opt.correct} className="w-5 h-5 accent-blue-600" />
-                <span className={`font-bold w-8 ${opt.correct ? 'text-blue-700' : 'text-slate-600'}`}>{opt.l}</span>
-                <input type="text" defaultValue={opt.v} className="flex-1 outline-none text-slate-900 bg-transparent font-medium" />
-                {opt.correct && <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center shrink-0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></div>}
+            {options.map((option, index) => (
+              <div key={index} className={`flex items-center gap-4 px-4 py-3 rounded-xl border ${correct === index ? 'border-2 border-blue-500 bg-blue-50/40' : 'border-slate-200'}`}>
+                <input type="radio" name="correct" aria-label={`Mark option ${index + 1} correct`} checked={correct === index} onChange={() => setCorrect(index)} className="w-5 h-5 accent-blue-600" />
+                <span className={`font-bold w-8 ${correct === index ? 'text-blue-700' : 'text-slate-600'}`}>{String.fromCharCode(65 + index)}</span>
+                <input type="text" required maxLength={300} aria-label={`Answer option ${index + 1}`} value={option} onChange={event => setOptions(current => current.map((value, optionIndex) => optionIndex === index ? event.target.value : value))} className="flex-1 outline-none text-slate-900 bg-transparent font-medium" />
               </div>
             ))}
           </div>
         </div>
 
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Hint / Explanation <span className="text-slate-400 font-normal">(optional)</span></label>
-          <input type="text" className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-blue-500" placeholder="e.g. Count on your fingers! 5 fingers + 3 more = ?" />
+          <label htmlFor="quiz-hint" className="block text-sm font-semibold text-slate-700 mb-2">Hint / Explanation <span className="text-slate-400 font-normal">(optional)</span></label>
+          <input id="quiz-hint" type="text" maxLength={500} value={hint} onChange={event => setHint(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-blue-500" placeholder="e.g. Count on your fingers! 5 fingers + 3 more = ?" />
         </div>
 
+        {error && <p role="alert" className="mb-4 text-sm font-semibold text-red-600">{error}</p>}
+        {success && <p role="status" className="mb-4 text-sm font-semibold text-green-700">{success}</p>}
+
         <div className="flex justify-between items-center pt-6 border-t border-slate-100">
-          <button className="flex items-center gap-2 text-orange-600 font-semibold bg-orange-50 px-4 py-2.5 rounded-lg hover:bg-orange-100 transition-colors">
-            <Trash2 className="w-4 h-4" /> Delete
-          </button>
           <div className="flex items-center gap-3">
-            <button onClick={() => nav('admin_content')} className="px-6 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
-            <button className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 font-semibold text-white shadow-sm transition-colors">Save Question</button>
+            <button type="button" onClick={() => nav('admin_content')} className="px-6 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+            <button type="submit" disabled={isSaving} className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 font-semibold text-white shadow-sm transition-colors">{isSaving ? 'Saving...' : 'Save Question'}</button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
